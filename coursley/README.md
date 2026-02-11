@@ -15,7 +15,7 @@ To recreate this project with the same configuration:
 
 ```sh
 # recreate this project
-pnpm dlx sv create --template minimal --types ts --add prettier eslint lucia="demo:no" storybook drizzle="database:postgresql+postgresql:postgres.js+docker:no" --install pnpm coursley
+pnpm dlx sv create --template minimal --types ts --add prettier eslint drizzle="database:postgresql+postgresql:postgres.js+docker:yes" --install pnpm coursley
 ```
 
 ## Developing
