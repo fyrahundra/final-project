@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770812126023,
-      "tag": "0000_wide_bug",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770813171154,
-      "tag": "0001_public_kinsey_walden",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1770814848894,
-      "tag": "0002_keen_doctor_doom",
+      "when": 1771417749535,
+      "tag": "0000_curly_lady_bullseye",
       "breakpoints": true
     }
   ]

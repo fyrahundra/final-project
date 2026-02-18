@@ -3,17 +3,22 @@ import postgres from "postgres";
 import * as schema from "./schema";
 import { env } from "$env/dynamic/private";
 import { db } from "./index";
+import { eq } from "drizzle-orm";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
 //query user data
 export function getUser(userId: number) {
     return db.query.userTable.findFirst({
-        where: (user, { eq }) => eq(user.id, userId),
+        where: (user, { eq }) => eq(user.id, String(userId)),
         with: {
             courses: true,
         },
     });
+}
+
+export function getUserByName(name: string) {
+    return db.select().from(schema.userTable).where(eq(schema.userTable.name, name)).execute();
 }
 
 //query course data
@@ -33,6 +38,16 @@ export function getAssignment(assignmentId: number) {
         where: (assignment, { eq }) => eq(assignment.id, assignmentId),
         with: {
             course: true,
+        },
+    });
+}
+
+//query session data
+export function getSession(token: string) {
+    return db.query.sessionTable.findFirst({
+        where: (session, { eq }) => eq(session.token, token),
+        with: {
+            user: true,
         },
     });
 }

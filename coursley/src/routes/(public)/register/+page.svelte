@@ -1,5 +1,6 @@
 <script>
     import { enhance } from '$app/forms';
+
     export let data
     export let form
 </script>
@@ -7,24 +8,26 @@
 <main>
     <div>
         <h1>
-            Login Page
+            Register Page
         </h1>
-        <form method="POST" action="?/login" use:enhance>
+        <form method="POST" action="?/register" use:enhance>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" autocomplete="off" required>
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" autocomplete="off" required>
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" autocomplete="off" required>
-            <button type="submit">Login</button>
+            <button type="submit">Register</button>
         </form>
         {#if form?.error}
             <p>{form.error}</p>
         {/if}
         {#if form?.success}
-            <p>Login successful. Hello {form.user.email}</p>
+            <p>Registration successful.</p>
         {/if}
     </div>
 
-        <h3>Registered Users:</h3>
+    <h3>Registered Users:</h3>
     {#each data.users as user}
         <p>{user.name} - {user.email} - {user.role} - {user.passwordHash}</p>
     {/each}

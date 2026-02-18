@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, serial, integer, text } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, serial, integer, text, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Define the role enum for user roles
@@ -8,10 +8,10 @@ export const roleEnum = pgEnum('role', ['student', 'instructor', 'admin']);
 
 // User table
 export const userTable = pgTable('user', {
-	id: serial('id').primaryKey(),
+	id: text('id').primaryKey(),
 	name: text('name').notNull(),
 	email: text('email').notNull().unique(),
-	password: text('password').notNull(),
+	passwordHash: text('passwordHash').notNull(),
 	profilePicture: text('profile_picture'),
 	role: roleEnum('role').notNull(),
 })
@@ -30,12 +30,27 @@ export const courseTable = pgTable('course', {
 	id: serial('id').primaryKey(),
 	title: text('title').notNull(),
 	description: text('description'),
-	instructorId: integer('instructor_id').references(() => userTable.id).notNull(),
+	instructorId: text('instructor_id').references(() => userTable.id).notNull(),
+})
+
+export const sessionTable = pgTable('session', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').references(() => userTable.id).notNull(),
+	token: text('token').notNull().unique(),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 })
 
 // Define relations
 export const userReltions = relations(userTable, ({ many }) => ({
 	courses: many(courseTable),
+	sessions: many(sessionTable),
+}))
+
+export const sessionRelations = relations(sessionTable, ({ one }) => ({
+	user: one(userTable, {
+		fields: [sessionTable.userId],
+		references: [userTable.id],
+	}),
 }))
 
 export const courseRelations = relations(courseTable, ({ one, many }) => ({
