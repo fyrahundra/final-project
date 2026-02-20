@@ -18,16 +18,16 @@ export const userTable = pgTable('user', {
 
 // Assignment table
 export const assignmentTable = pgTable('assignment', {
-	id: serial('id').primaryKey(),
+	id: text('id').primaryKey(),
 	title: text('title').notNull(),
 	description: text('description'),
 	content: text('content').notNull(),
-	courseId: integer('course_id').references(() => courseTable.id).notNull(),
+	courseId: text('course_id').references(() => courseTable.id).notNull(),
 })
 
 // Course table
 export const courseTable = pgTable('course', {
-	id: serial('id').primaryKey(),
+	id: text('id').primaryKey(),
 	title: text('title').notNull(),
 	description: text('description'),
 	instructorId: text('instructor_id').references(() => userTable.id).notNull(),
@@ -40,10 +40,19 @@ export const sessionTable = pgTable('session', {
 	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 })
 
+// Enrollment table (junction table for students and courses)
+export const enrollmentTable = pgTable('enrollment', {
+	id: text('id').primaryKey(),
+	studentId: text('student_id').references(() => userTable.id).notNull(),
+	courseId: text('course_id').references(() => courseTable.id).notNull(),
+	enrolledAt: timestamp('enrolled_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 // Define relations
 export const userReltions = relations(userTable, ({ many }) => ({
-	courses: many(courseTable),
+	instructorCourses: many(courseTable),
 	sessions: many(sessionTable),
+	enrollments: many(enrollmentTable),
 }))
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -58,8 +67,19 @@ export const courseRelations = relations(courseTable, ({ one, many }) => ({
 		fields: [courseTable.instructorId],
 		references: [userTable.id],
 	}),
-	students: many(userTable),
+	enrollments: many(enrollmentTable),
 	assignments: many(assignmentTable),
+}))
+
+export const enrollmentRelations = relations(enrollmentTable, ({ one }) => ({
+	student: one(userTable, {
+		fields: [enrollmentTable.studentId],
+		references: [userTable.id],
+	}),
+	course: one(courseTable, {
+		fields: [enrollmentTable.courseId],
+		references: [courseTable.id],
+	}),
 }))
 
 export const assignmentRelations = relations(assignmentTable, ({ one }) => ({

@@ -8,6 +8,20 @@
       "when": 1771417749535,
       "tag": "0000_curly_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771581662750,
+      "tag": "0001_high_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771583436619,
+      "tag": "0002_whole_ezekiel",
+      "breakpoints": true
     }
   ]
 }

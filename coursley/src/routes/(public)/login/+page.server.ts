@@ -3,8 +3,7 @@ import { db } from "$lib/server/db/index";
 import { sessionTable, userTable } from "$lib/server/db/schema"; // adjust import path as needed
 import { getUserByName } from "$lib/server/db/query";
 import argon2 from "argon2";
-
-let logedIn = false;
+import { createSession, destroySession } from "$lib/server/auth";
 
 export const load: ServerLoad = async ({locals}) => {
     // Your load function logic here
@@ -19,13 +18,11 @@ export const load: ServerLoad = async ({locals}) => {
 };
 
 export const actions: Actions = {
-    // Your action function logic here
-    login: async ({ request }) => {
+    login: async ({ request, cookies }) => {
         const formData = await request.formData();
-        // Handle login action
         const userName = formData.get("username") as string;
         const password = formData.get("password") as string;
-        // Perform login logic, e.g., validate credentials, set cookies, etc.
+        
         if (!userName || !password) {
             return fail(400, { error: "Username and password are required" });
         }
@@ -41,16 +38,30 @@ export const actions: Actions = {
                 return fail(400, { error: "Invalid username or password" });
             }
 
-            // Set cookies or session here as needed
-            logedIn = true;
-            return { success: true, user: user };
+            // Create session and set cookie
+            const session = await createSession(user.id);
+            cookies.set("session_token", session.token, {
+                path: "/",
+                httpOnly: true,
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 60 * 60 * 24 * 7, // 7 days
+            });
         } catch (error) {
             console.error("Error logging in user:", error);
             return fail(400, { error: "Invalid username or password" });
         }
 
-       // if (logedIn) {
-            //throw redirect(302, "/register");
-        //}
+        throw redirect(302, "/courses");
+    },
+    logout: async ({ cookies, locals }) => {
+        if (locals.session) {
+            await destroySession(locals.session.token);
+        }
+        locals.user = null;
+        locals.session = null;
+        cookies.delete("session_token", { path: "/" });
+
+        throw redirect(302, '/login');
     }
 };

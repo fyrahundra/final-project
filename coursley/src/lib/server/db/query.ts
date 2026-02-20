@@ -8,11 +8,15 @@ import { eq } from "drizzle-orm";
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
 //query user data
-export function getUser(userId: number) {
+export function getUser(userId: string) {
     return db.query.userTable.findFirst({
-        where: (user, { eq }) => eq(user.id, String(userId)),
+        where: (user, { eq }) => eq(user.id, userId),
         with: {
-            courses: true,
+            enrollments: {
+                with: {
+                    course: true,
+                },
+            },
         },
     });
 }
@@ -22,7 +26,7 @@ export function getUserByName(name: string) {
 }
 
 //query course data
-export function getCourse(courseId: number) {
+export function getCourse(courseId: string) {
     return db.query.courseTable.findFirst({
         where: (course, { eq }) => eq(course.id, courseId),
         with: {
@@ -33,7 +37,7 @@ export function getCourse(courseId: number) {
 }
 
 //query assignment data
-export function getAssignment(assignmentId: number) {
+export function getAssignment(assignmentId: string) {
     return db.query.assignmentTable.findFirst({
         where: (assignment, { eq }) => eq(assignment.id, assignmentId),
         with: {

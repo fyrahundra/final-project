@@ -1,10 +1,10 @@
-import { fail, type Actions, type ServerLoad } from "@sveltejs/kit";
+import { fail, redirect, type Actions, type ServerLoad } from "@sveltejs/kit";
 import { hash } from "argon2";
 import { db } from "$lib/server/db/index";
 import { userTable, sessionTable } from "$lib/server/db/schema";
 import { createSession } from "$lib/server/auth";
 import { randomUUID } from "crypto";
-import { eq, inArray } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 export const load: ServerLoad = async ({locals}) => {
     // Your load function logic here
@@ -39,7 +39,7 @@ export const actions: Actions = {
         const userId = randomUUID();
 
         try {
-            const existingUsers = await db.select().from(userTable).where(eq(userTable.name, name) || eq(userTable.email, email)).execute();
+            const existingUsers = await db.select().from(userTable).where(or(eq(userTable.name, name), eq(userTable.email, email))).execute();
             if (existingUsers.length > 0) {
                 return fail(400, { error: "Name, email or password already in use" });
             }
@@ -51,29 +51,23 @@ export const actions: Actions = {
                 role: "student"
             });
 
-            try {
-                const session = await createSession(userId);
-                if (!session) {
-                    return fail(500, { error: "Failed to create session" });
-                }
-                cookies.set("session_token", session.token, {
-                    path: "/",
-                    httpOnly: true,
-                    sameSite: "lax",
-                    secure: false,
-                    maxAge: 60 * 60 * 24 * 30 // 30 days
-                });
-            } catch (sessionError) {
-                console.error("Error creating session:", sessionError);
-                const message = sessionError instanceof Error ? sessionError.message : String(sessionError);
-                return fail(500, { error: `Failed to create session: ${message}` });
+            const session = await createSession(userId);
+            if (!session) {
+                return fail(500, { error: "Failed to create session" });
             }
-
-            return { success: true };
+            cookies.set("session_token", session.token, {
+                path: "/",
+                httpOnly: true,
+                sameSite: "lax",
+                secure: false,
+                maxAge: 60 * 60 * 24 * 30 // 30 days
+            });
         } catch (error) {
             console.error("Error creating user:", error);
             const message = error instanceof Error ? error.message : String(error);
             return fail(500, { error: `Failed to create user: ${message}` });
         }
+
+        throw redirect(302, "/courses");
     }
 };
