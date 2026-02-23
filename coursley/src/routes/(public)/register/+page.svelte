@@ -20,10 +20,15 @@
             <button type="submit">Register</button>
         </form>
         {#if form?.error}
-            <p>{form.error}</p>
-        {/if}
-        {#if form?.success}
-            <p>Registration successful.</p>
+            {#if Array.isArray(form.error)}
+                <ul>
+                    {#each form.error as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {:else}
+                <p>{form.error}</p>
+            {/if}
         {/if}
     </div>
 

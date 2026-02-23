@@ -3,6 +3,7 @@ import { sessionTable } from "./db/schema";
 import { randomBytes, randomUUID } from "crypto";
 import { getSession } from "./db/query";
 import { eq } from "drizzle-orm";
+import { fail } from "@sveltejs/kit";
 
 export function generateSessionToken() {
     return randomBytes(32).toString("hex");
@@ -56,4 +57,31 @@ export async function refreshSession(token: string) {
 
 export async function destroySession(token: string) {
     await db.delete(sessionTable).where(eq(sessionTable.token, token)).execute();
+}
+
+export function validatePassword(password: string, name: string, email: string) {
+    // Implement password validation logic (e.g., check length, complexity)
+    let errorMessage = [];
+    if (password.length < 8) {
+        errorMessage.push("Password must be at least 8 characters long");
+    }
+    if (!/[A-Z]/.test(password)) {
+        errorMessage.push("Password must contain at least one uppercase letter");
+    }
+    if (!/[a-z]/.test(password)) {
+        errorMessage.push("Password must contain at least one lowercase letter");
+    }
+    if (!/[0-9]/.test(password)) {
+        errorMessage.push("Password must contain at least one number");
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+        errorMessage.push("Password must contain at least one special character");
+    }
+    if (name.toLowerCase().includes(password.toLowerCase())) {
+        errorMessage.push("Password should not contain your name");
+    }
+    if (email.toLocaleLowerCase().includes(password.toLocaleLowerCase())) {
+        errorMessage.push("Password should not contain your email");
+    }
+    return errorMessage;
 }

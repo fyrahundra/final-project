@@ -2,7 +2,7 @@ import { fail, redirect, type Actions, type ServerLoad } from "@sveltejs/kit";
 import { hash } from "argon2";
 import { db } from "$lib/server/db/index";
 import { userTable, sessionTable } from "$lib/server/db/schema";
-import { createSession } from "$lib/server/auth";
+import { createSession, validatePassword } from "$lib/server/auth";
 import { randomUUID } from "crypto";
 import { eq, or } from "drizzle-orm";
 
@@ -28,6 +28,11 @@ export const actions: Actions = {
 
         if (!name || !email || !password) {
             return fail(400, { error: "Name, email, and password are required" });
+        }
+
+        const validationError = validatePassword(password, name, email);
+        if (validationError.length > 0) {
+            return fail(400, { error: validationError });
         }
 
         const passwordHash = await hash(password);
@@ -62,6 +67,7 @@ export const actions: Actions = {
                 secure: false,
                 maxAge: 60 * 60 * 24 * 30 // 30 days
             });
+
         } catch (error) {
             console.error("Error creating user:", error);
             const message = error instanceof Error ? error.message : String(error);
