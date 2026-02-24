@@ -1,9 +1,9 @@
 <script>
-    import AuthLayout from '$lib/components/auth_layout.svelte';
+	import AuthLayout from '$lib/components/auth_layout.svelte';
 
-    export let data
+	export let data;
 </script>
 
 <AuthLayout {data}>
-    <slot></slot>
+	<slot></slot>
 </AuthLayout>

@@ -1,7 +1,7 @@
 <script>
-    import PubLayout from '$lib/components/pub_layout.svelte';
+	import PubLayout from '$lib/components/pub_layout.svelte';
 </script>
 
 <PubLayout>
-    <slot></slot>
+	<slot></slot>
 </PubLayout>
