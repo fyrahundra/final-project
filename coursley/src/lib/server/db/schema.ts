@@ -22,6 +22,7 @@ export const assignmentTable = pgTable('assignment', {
 	title: text('title').notNull(),
 	description: text('description'),
 	content: text('content').notNull(),
+	contentTitle: text('content_title'),
 	courseId: text('course_id')
 		.references(() => courseTable.id)
 		.notNull()
