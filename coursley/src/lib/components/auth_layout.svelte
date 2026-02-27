@@ -18,7 +18,7 @@
 	<div class="sidebar">
 		<nav>
 			<ul>
-				<h3>My Courses</h3>
+				<h3><a href="/courses">My Courses</a></h3>
 				{#each data.courses as course}
 					<li><a href={`/courses/${course.id}`}>{course.title}</a></li>
 				{/each}

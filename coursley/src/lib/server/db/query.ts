@@ -55,3 +55,32 @@ export function getSession(token: string) {
 		}
 	});
 }
+
+//query user assignment data
+export function getUserAssignment(userAssignmentId: string) {
+	return db.query.userAssignmentTable.findFirst({
+		where: (userAssignment, { eq }) => eq(userAssignment.id, userAssignmentId),
+		with: {
+			assignment: {
+				with: {
+					course: true
+				}
+			},
+			user: true
+		}
+	});
+}
+
+export function getUserAssignmentByUserAndAssignment(userId: string, assignmentId: string) {
+	return db.query.userAssignmentTable.findFirst({
+		where: (userAssignment, { and, eq }) =>
+			and(eq(userAssignment.userId, userId), eq(userAssignment.assignmentId, assignmentId)),
+		with: {
+			assignment: {
+				with: {
+					course: true
+				}
+			}
+		}
+	});
+}

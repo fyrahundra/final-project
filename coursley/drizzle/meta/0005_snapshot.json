@@ -1,6 +1,6 @@
 {
-  "id": "7602c332-cad6-4b23-9b15-ef5ac66348e8",
-  "prevId": "e5e76e97-20a0-4dc4-ab65-8951706e73de",
+  "id": "c2b655fe-404b-4526-9792-53af12d3bed4",
+  "prevId": "7602c332-cad6-4b23-9b15-ef5ac66348e8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -57,7 +57,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -108,7 +108,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -160,7 +160,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "enrollment_course_id_course_id_fk": {
@@ -173,7 +173,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -224,7 +224,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -310,7 +310,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "user_assignment_assignment_id_assignment_id_fk": {
@@ -323,7 +323,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

@@ -24,7 +24,7 @@ export const assignmentTable = pgTable('assignment', {
 	content: text('content').notNull(),
 	contentTitle: text('content_title'),
 	courseId: text('course_id')
-		.references(() => courseTable.id)
+		.references(() => courseTable.id, { onDelete: 'cascade' })
 		.notNull()
 });
 
@@ -33,15 +33,16 @@ export const courseTable = pgTable('course', {
 	id: text('id').primaryKey(),
 	title: text('title').notNull(),
 	description: text('description'),
+	joinId: text('join_id').notNull().unique(),
 	instructorId: text('instructor_id')
-		.references(() => userTable.id)
+		.references(() => userTable.id, { onDelete: 'cascade' })
 		.notNull()
 });
 
 export const sessionTable = pgTable('session', {
 	id: text('id').primaryKey(),
 	userId: text('user_id')
-		.references(() => userTable.id)
+		.references(() => userTable.id, { onDelete: 'cascade' })
 		.notNull(),
 	token: text('token').notNull().unique(),
 	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull()
@@ -51,19 +52,36 @@ export const sessionTable = pgTable('session', {
 export const enrollmentTable = pgTable('enrollment', {
 	id: text('id').primaryKey(),
 	studentId: text('student_id')
-		.references(() => userTable.id)
+		.references(() => userTable.id, { onDelete: 'cascade' })
 		.notNull(),
 	courseId: text('course_id')
-		.references(() => courseTable.id)
+		.references(() => courseTable.id, { onDelete: 'cascade' })
 		.notNull(),
 	enrolledAt: timestamp('enrolled_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+// User Assignment table (stores individual student work on assignments)
+export const userAssignmentTable = pgTable('user_assignment', {
+	id: text('id').primaryKey(),
+	userId: text('user_id')
+		.references(() => userTable.id, { onDelete: 'cascade' })
+		.notNull(),
+	assignmentId: text('assignment_id')
+		.references(() => assignmentTable.id, { onDelete: 'cascade' })
+		.notNull(),
+	content: text('content').notNull(),
+	contentTitle: text('content_title'),
+	status: text('status').notNull().default('in_progress'), // in_progress, submitted, graded
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
 // Define relations
 export const userReltions = relations(userTable, ({ many }) => ({
 	instructorCourses: many(courseTable),
 	sessions: many(sessionTable),
-	enrollments: many(enrollmentTable)
+	enrollments: many(enrollmentTable),
+	userAssignments: many(userAssignmentTable)
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -93,9 +111,21 @@ export const enrollmentRelations = relations(enrollmentTable, ({ one }) => ({
 	})
 }));
 
-export const assignmentRelations = relations(assignmentTable, ({ one }) => ({
+export const assignmentRelations = relations(assignmentTable, ({ one, many }) => ({
 	course: one(courseTable, {
 		fields: [assignmentTable.courseId],
 		references: [courseTable.id]
+	}),
+	userAssignments: many(userAssignmentTable)
+}));
+
+export const userAssignmentRelations = relations(userAssignmentTable, ({ one }) => ({
+	user: one(userTable, {
+		fields: [userAssignmentTable.userId],
+		references: [userTable.id]
+	}),
+	assignment: one(assignmentTable, {
+		fields: [userAssignmentTable.assignmentId],
+		references: [assignmentTable.id]
 	})
 }));

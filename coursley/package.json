@@ -43,11 +43,14 @@
 	"dependencies": {
 		"@oslojs/crypto": "^1.0.1",
 		"@tiptap/core": "^3.20.0",
+		"@tiptap/extension-color": "^3.20.0",
 		"@tiptap/extension-subscript": "^3.20.0",
 		"@tiptap/extension-superscript": "^3.20.0",
+		"@tiptap/extension-text-style": "^3.20.0",
 		"@tiptap/pm": "^3.20.0",
 		"@tiptap/starter-kit": "^3.20.0",
 		"argon2": "^0.44.0",
+		"nanoid": "^5.1.6",
 		"postgres": "^3.4.8",
 		"svelte-tiptap": "^3.0.1"
 	}

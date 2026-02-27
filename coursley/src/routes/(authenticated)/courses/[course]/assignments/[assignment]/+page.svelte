@@ -6,7 +6,17 @@
 	}
 </script>
 
-<h1>{data.assignment?.title}</h1>
-<h3>{data.assignment?.description}</h3>
+{#if data.error}
+	<div class="error">
+		<p>{data.error}</p>
+	</div>
+{:else if data.assignment && data.userAssignment}
+	<h1>{data.assignment?.title}</h1>
+	<h3>{data.assignment?.description}</h3>
 
-<button on:click={() => openInNewTab(`/RTE?id=${data.assignment?.id}`)}>Open Assignment</button>
+	<button on:click={() => openInNewTab(`/RTE?id=${data.userAssignment?.id}`)}
+		>Open Assignment</button
+	>
+{:else}
+	<p>Loading...</p>
+{/if}
