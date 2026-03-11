@@ -1,18 +1,40 @@
-<script>
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import UserDisplay from '../user_display.svelte';
+
 	export let data;
+
+	let currentTheme: 'light' | 'dark' = data.user?.theme ?? 'light';
+	$: user = data.user ? { ...data.user, theme: currentTheme } : null;
+
+	function applyTheme(theme: 'light' | 'dark') {
+		localStorage.setItem('theme', theme);
+		window.dispatchEvent(new CustomEvent('theme-change', { detail: { theme } }));
+	}
+
+	onMount(() => {
+		applyTheme(currentTheme);
+
+		const source = new EventSource('/streams');
+		source.addEventListener('theme', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { theme: 'light' | 'dark' };
+			currentTheme = payload.theme;
+			applyTheme(currentTheme);
+		});
+
+		return () => {
+			source.close();
+		};
+	});
 </script>
 
 <div class="auth-layout">
 	<div class="topbar">
 		<h1 class="title">Coursley</h1>
+		<!--TODO: Implement user info display with profile picture-->
 		{#if data.user}
-			<div class="user-info">
-				<h2>{data.user.name}</h2>
-
-				<form action="/login?/logout" method="post" class="logout-button">
-					<button type="submit">Logout</button>
-				</form>
-			</div>
+			<UserDisplay {user} />
 		{/if}
 	</div>
 	<div class="sidebar">
@@ -48,7 +70,7 @@
 		min-height: 100vh;
 		min-width: 100vw;
 		padding: 2rem;
-		background-color: #f5f5f5;
+		background-color: var(--secondary-background-color);
 	}
 
 	main {
@@ -58,7 +80,6 @@
 		width: 80%;
 		height: 90%;
 		padding: 1rem;
-		background-color: #ffffff;
 	}
 
 	.topbar {
@@ -82,29 +103,8 @@
 		top: 9%;
 		width: 15%;
 		height: 100vh;
-		background-color: #ffffff;
+		background-color: var(--background-color);
 		padding: 1rem;
-	}
-
-	.logout-button {
-		background: none;
-		border: none;
-		color: #ffffff;
-		cursor: pointer;
-		font-size: 1rem;
-	}
-
-	.logout-button:hover {
-		text-decoration: underline;
-	}
-
-	.user-info {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		gap: 1rem;
-		position: relative;
-		right: 1.5%;
 	}
 
 	.title {

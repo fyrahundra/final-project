@@ -4,8 +4,6 @@ import { relations } from 'drizzle-orm';
 // Define the role enum for user roles
 export const roleEnum = pgEnum('role', ['student', 'instructor', 'admin']);
 
-// Define tables
-
 // User table
 export const userTable = pgTable('user', {
 	id: text('id').primaryKey(),
@@ -13,7 +11,9 @@ export const userTable = pgTable('user', {
 	email: text('email').notNull().unique(),
 	passwordHash: text('passwordHash').notNull(),
 	profilePicture: text('profile_picture'),
-	role: roleEnum('role').notNull()
+	role: roleEnum('role').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	theme: text('theme').notNull().default('light') // light or dark
 });
 
 // Assignment table

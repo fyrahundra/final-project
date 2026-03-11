@@ -16,10 +16,7 @@
 
 	function openTemplateEditor() {
 		templateId = generateTemplateId();
-		templateWindow = window.open(
-			`/RTE?mode=template&templateId=${templateId}`,
-			'rte_template',
-		);
+		templateWindow = window.open(`/RTE?mode=template&templateId=${templateId}`, 'rte_template');
 
 		// Listen for storage changes to get template back
 		const checkTemplate = setInterval(() => {
@@ -43,6 +40,7 @@
 
 <h1>{data.course?.title}</h1>
 <h3>{data.course?.description}</h3>
+<h4>Join ID: {data.course?.joinId}</h4>
 
 <h2>Assignments</h2>
 <ul>

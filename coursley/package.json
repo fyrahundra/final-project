@@ -52,6 +52,7 @@
 		"argon2": "^0.44.0",
 		"nanoid": "^5.1.6",
 		"postgres": "^3.4.8",
+		"redis": "^5.11.0",
 		"svelte-tiptap": "^3.0.1"
 	}
 }

@@ -50,6 +50,20 @@
       "when": 1772183748035,
       "tag": "0006_odd_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773229672676,
+      "tag": "0007_plain_rocket_racer",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773333600000,
+      "tag": "0008_fix_user_columns_drift",
+      "breakpoints": true
     }
   ]
 }

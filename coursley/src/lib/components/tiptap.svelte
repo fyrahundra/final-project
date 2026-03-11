@@ -29,6 +29,7 @@
 	let saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
 	const update = writable(0);
+
 	const langOptions = [
 		{ code: 'en', label: 'English' },
 		{ code: 'de', label: 'German' },
@@ -41,6 +42,7 @@
 		{ code: 'ar', label: 'Arabic' },
 		{ code: 'hi', label: 'Hindi' }
 	];
+
 	const fontOptions = [
 		{ name: 'Arial', value: 'Arial, sans-serif' },
 		{ name: 'Times New Roman', value: '"Times New Roman", serif' },
@@ -140,9 +142,9 @@
 			onTransaction: () => {
 				update.update((n) => n + 1);
 				const color = editor?.getAttributes('textStyle').color;
-				currentColor = (color && /^#[0-9a-f]{6}$/i.test(color)) ? color : '#000000';
+				currentColor = color && /^#[0-9a-f]{6}$/i.test(color) ? color : '#000000';
 				const fontFamily = editor?.getAttributes('textStyle').fontFamily;
-				currentFont = (fontFamily && fontFamily.trim()) ? fontFamily : 'Arial, sans-serif';
+				currentFont = fontFamily && fontFamily.trim() ? fontFamily : 'Arial, sans-serif';
 				const activeHeader = headerOptions.find((h) => h.isActive?.());
 				currentHeading = activeHeader?.label || 'Normal';
 			}

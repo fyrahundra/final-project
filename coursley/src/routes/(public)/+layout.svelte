@@ -1,5 +1,5 @@
 <script>
-	import PubLayout from '$lib/components/pub_layout.svelte';
+	import PubLayout from '$lib/components/layouts/pub_layout.svelte';
 </script>
 
 <PubLayout>

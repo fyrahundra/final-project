@@ -1,5 +1,5 @@
 <script>
-	import EditorLayout from '$lib/components/editor_layout.svelte';
+	import EditorLayout from '$lib/components/layouts/editor_layout.svelte';
 	export let data;
 </script>
 

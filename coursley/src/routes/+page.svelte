@@ -10,4 +10,18 @@
 	educators. Start your learning journey with Coursley today!
 </p>
 
-<a href="/courses">Get Started</a>
+<a class="getStarted" href="/courses">Get Started</a>
+
+<style>
+	.getStarted {
+		display: inline-block;
+		padding: 10px 20px;
+		background-color: #0070f3;
+		color: white;
+		text-decoration: none;
+		border-radius: 5px;
+	}
+	.getStarted:hover {
+		background-color: #005bb5;
+	}
+</style>
