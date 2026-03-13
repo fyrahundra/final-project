@@ -1,6 +1,3 @@
-<script>
-</script>
-
 <div class="pub-layout">
 	<div class="topbar">
 		<h1>Coursley</h1>
@@ -16,7 +13,7 @@
 		justify-content: center;
 		min-height: 100vh;
 		padding: 2rem;
-		background-color: #f5f5f5;
+		background-color: var(--secondary-background-color);
 	}
 
 	.topbar {

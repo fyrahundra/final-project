@@ -1,80 +1,54 @@
 <script lang="ts">
+	import AssignmentCreate from '$lib/components/assignment_create.svelte';
+
 	export let data;
 
-	let tempAssignment = {
-		title: '',
-		description: '',
-		content: ''
-	};
-
-	let templateWindow: Window | null = null;
-	let templateId = '';
-
-	function generateTemplateId() {
-		return `template_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-	}
-
-	function openTemplateEditor() {
-		templateId = generateTemplateId();
-		templateWindow = window.open(`/RTE?mode=template&templateId=${templateId}`, 'rte_template');
-
-		// Listen for storage changes to get template back
-		const checkTemplate = setInterval(() => {
-			const stored = localStorage.getItem(templateId);
-			if (stored) {
-				const templateData = JSON.parse(stored);
-				tempAssignment.content = templateData.content;
-				localStorage.removeItem(templateId);
-				clearInterval(checkTemplate);
-				if (templateWindow && templateWindow.closed) {
-					// Window is closed, template ready
-					templateWindow = null;
-				} else {
-					// Window still open, close it
-					templateWindow?.close();
-				}
-			}
-		}, 500);
-	}
+	let showCreateAssignment = false;
 </script>
 
 <h1>{data.course?.title}</h1>
 <h3>{data.course?.description}</h3>
-<h4>Join ID: {data.course?.joinId}</h4>
+<h4>Course ID: {data.course?.joinId}</h4>
 
 <h2>Assignments</h2>
-<ul>
-	{#each data.assignments as assignment}
-		<li>
-			<a href={`/courses/${data.course?.id}/assignments/${assignment.id}`}>{assignment.title}</a>
-		</li>
-	{/each}
-</ul>
+	<ul>
+		{#each data.assignments as assignment}
+			<li>
+				<a href={`/courses/${data.course?.id}/assignments/${assignment.id}`}>{assignment.title}</a>
+			</li>
+		{/each}
+	</ul>
 
 {#if data.user?.role === 'instructor'}
-	<form action="?/createAssignment" method="POST">
-		<label for="title">Assignment Title:</label>
-		<input
-			type="text"
-			name="title"
-			placeholder="Assignment Title"
-			bind:value={tempAssignment.title}
-			required
-		/>
-		<label for="description">Assignment Description:</label>
-		<input
-			type="text"
-			name="description"
-			placeholder="Assignment Description"
-			bind:value={tempAssignment.description}
-			required
-		/>
-		<label for="content">Assignment Template:</label>
-		<button type="button" onclick={openTemplateEditor}>Create Template</button>
-		{#if tempAssignment.content}
-			<p>✓ Template created</p>
-		{/if}
-		<input type="hidden" name="content" value={tempAssignment.content} />
-		<button type="submit" disabled={!tempAssignment.content}>Create Assignment</button>
-	</form>
+	
+	<button on:click={() => (showCreateAssignment = true)}>Create Assignment</button>
 {/if}
+{#if showCreateAssignment}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="assignment-create-backdrop" on:click={() => (showCreateAssignment = false)}>
+		<div class="assignment-create-modal" on:click|stopPropagation>
+			<AssignmentCreate action={`?/createAssignment`} />
+		</div>
+	</div>
+{/if}
+
+<style>
+	.assignment-create-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.45);
+		z-index: 1100;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.assignment-create-modal {
+		width: min(92vw, 640px);
+		background: #ffffff;
+		border-radius: 10px;
+		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+		padding: 1rem;
+	}
+</style>

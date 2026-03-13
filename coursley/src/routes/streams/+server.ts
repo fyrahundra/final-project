@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { subscribeToTheme } from '$lib/server/theme-stream';
+import { subscribeToProfilePicture, subscribeToTheme } from '$lib/server/theme-stream';
 
 export const GET: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user) {
@@ -9,8 +9,10 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 	const encoder = new TextEncoder();
 	const userId = locals.user.id;
 	const initialTheme: 'light' | 'dark' = locals.user.theme === 'dark' ? 'dark' : 'light';
+	const initialProfilePicture = locals.user.profilePicture ?? null;
 	let pingInterval: ReturnType<typeof setInterval> | undefined;
-	let unsubscribe: (() => void) | undefined;
+	let unsubscribeTheme: (() => void) | undefined;
+	let unsubscribeProfilePicture: (() => void) | undefined;
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
@@ -19,14 +21,23 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				controller.enqueue(encoder.encode(`event: theme\ndata: ${data}\n\n`));
 			};
 
+			const sendProfilePicture = (profilePicture: string | null) => {
+				const data = JSON.stringify({ profilePicture });
+				controller.enqueue(encoder.encode(`event: profile_picture\ndata: ${data}\n\n`));
+			};
+
 			const cleanup = () => {
 				if (pingInterval) {
 					clearInterval(pingInterval);
 					pingInterval = undefined;
 				}
-				if (unsubscribe) {
-					unsubscribe();
-					unsubscribe = undefined;
+				if (unsubscribeTheme) {
+					unsubscribeTheme();
+					unsubscribeTheme = undefined;
+				}
+				if (unsubscribeProfilePicture) {
+					unsubscribeProfilePicture();
+					unsubscribeProfilePicture = undefined;
 				}
 			};
 
@@ -34,9 +45,14 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 
 			controller.enqueue(encoder.encode('retry: 3000\n\n'));
 			sendTheme(initialTheme);
+			sendProfilePicture(initialProfilePicture);
 
-			unsubscribe = subscribeToTheme(userId, ({ theme }) => {
+			unsubscribeTheme = subscribeToTheme(userId, ({ theme }) => {
 				sendTheme(theme);
+			});
+
+			unsubscribeProfilePicture = subscribeToProfilePicture(userId, ({ profilePicture }) => {
+				sendProfilePicture(profilePicture);
 			});
 
 			pingInterval = setInterval(() => {
@@ -47,8 +63,11 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			if (pingInterval) {
 				clearInterval(pingInterval);
 			}
-			if (unsubscribe) {
-				unsubscribe();
+			if (unsubscribeTheme) {
+				unsubscribeTheme();
+			}
+			if (unsubscribeProfilePicture) {
+				unsubscribeProfilePicture();
 			}
 		}
 	});

@@ -17,9 +17,6 @@
 		{#if form?.error}
 			<p>{form.error}</p>
 		{/if}
-		{#if form?.success}
-			<p>Login successful. Hello {form.user.email}</p>
-		{/if}
 	</div>
 
 	<h3>Registered Users:</h3>

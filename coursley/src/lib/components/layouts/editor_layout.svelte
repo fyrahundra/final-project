@@ -1,7 +1,3 @@
-<script>
-	export let data;
-</script>
-
 <main>
 	<slot></slot>
 </main>
@@ -15,5 +11,6 @@
 		width: 95vw;
 		height: 95vh;
 		padding: 1rem;
+		background-color: #f5f5f5;
 	}
 </style>

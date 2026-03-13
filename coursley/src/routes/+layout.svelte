@@ -42,6 +42,8 @@
 		--font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 		--background-color: #ffffff;
 		--secondary-background-color: #f5f5f5;
+		--card-color: #ffffff;
+		--card-p: #333333;
 	}
 
 	.app-shell.dark-mode {
@@ -50,6 +52,8 @@
 		--accent-color: #e94e77;
 		--background-color: #1a1a1a;
 		--secondary-background-color: #111111;
+		--card-color: #090e29;
+		--card-p: #f5f5f5;
 	}
 
 	.app-shell {

@@ -1,4 +1,3 @@
-<!--TODO: Add profile box (same as google) where name is displayed, move logout to that box and add profilepicture instead of name when box is not open-->
 <script lang="ts">
 	import { EditorContent } from 'svelte-tiptap';
 	import { Editor } from '@tiptap/core';

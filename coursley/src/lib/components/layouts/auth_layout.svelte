@@ -1,15 +1,32 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import UserDisplay from '../user_display.svelte';
+	import CourseCreate from '../course_create.svelte';
 
 	export let data;
 
 	let currentTheme: 'light' | 'dark' = data.user?.theme ?? 'light';
-	$: user = data.user ? { ...data.user, theme: currentTheme } : null;
+	let currentProfilePicture: string | null = data.user?.profilePicture ?? null;
+	let isCreateCourseOpen = false;
+	$: user = data.user
+		? { ...data.user, theme: currentTheme, profilePicture: currentProfilePicture }
+		: null;
 
 	function applyTheme(theme: 'light' | 'dark') {
 		localStorage.setItem('theme', theme);
 		window.dispatchEvent(new CustomEvent('theme-change', { detail: { theme } }));
+	}
+
+	function handleProfilePictureUpdated(profilePicture: string) {
+		currentProfilePicture = profilePicture;
+	}
+
+	function createCourse() {
+		isCreateCourseOpen = true;
+	}
+
+	function closeCreateCourse() {
+		isCreateCourseOpen = false;
 	}
 
 	onMount(() => {
@@ -23,6 +40,12 @@
 			applyTheme(currentTheme);
 		});
 
+		source.addEventListener('profile_picture', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { profilePicture: string | null };
+			currentProfilePicture = payload.profilePicture;
+		});
+
 		return () => {
 			source.close();
 		};
@@ -34,7 +57,7 @@
 		<h1 class="title">Coursley</h1>
 		<!--TODO: Implement user info display with profile picture-->
 		{#if data.user}
-			<UserDisplay {user} />
+			<UserDisplay {user} onProfilePictureUpdated={handleProfilePictureUpdated} />
 		{/if}
 	</div>
 	<div class="sidebar">
@@ -47,15 +70,18 @@
 			</ul>
 		</nav>
 		{#if data.user && data.user.role === 'instructor'}
-			<form action="/api/courses" method="POST">
-				<label for="title">Course Title:</label>
-				<input type="text" name="title" placeholder="Course Title" required />
-				<label for="description">Course Description:</label>
-				<input type="text" name="description" placeholder="Course Description" required />
-				<button type="submit">Create Course</button>
-			</form>
+			<button class="add-course" on:click={createCourse}>+</button>
 		{/if}
 	</div>
+	{#if isCreateCourseOpen}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="course-create-backdrop" on:click={closeCreateCourse}>
+			<div class="course-create-modal" on:click|stopPropagation>
+				<CourseCreate />
+			</div>
+		</div>
+	{/if}
 	<main>
 		<slot></slot>
 	</main>
@@ -111,5 +137,42 @@
 		font-size: 1.5rem;
 		position: relative;
 		left: 1.5%;
+	}
+
+	.add-course {
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.5rem;
+		background-color: var(--primary-color);
+		color: var(--text-color);
+		border: none;
+		cursor: pointer;
+
+		position: absolute;
+		bottom: 15%;
+		left: 42.5%;
+	}
+
+	.course-create-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.45);
+		z-index: 1100;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.course-create-modal {
+		width: min(92vw, 640px);
+		background: #ffffff;
+		border-radius: 10px;
+		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+		padding: 1rem;
 	}
 </style>
