@@ -11,16 +11,19 @@
 <h4>Course ID: {data.course?.joinId}</h4>
 
 <h2>Assignments</h2>
-	<ul>
-		{#each data.assignments as assignment}
-			<li>
-				<a href={`/courses/${data.course?.id}/assignments/${assignment.id}`}>{assignment.title}</a>
-			</li>
-		{/each}
-	</ul>
+	{#if data.assignments?.length === 0}
+		<p>No assignments yet.</p>
+	{:else}
+		<ul>
+			{#each data.assignments as assignment}
+				<li>
+					<a href={`/courses/${data.course?.id}/assignments/${assignment.id}`}>{assignment.title}</a>
+				</li>
+			{/each}
+		</ul>
+	{/if}
 
-{#if data.user?.role === 'instructor'}
-	
+{#if data.course?.instructorId === data.user?.id}
 	<button on:click={() => (showCreateAssignment = true)}>Create Assignment</button>
 {/if}
 {#if showCreateAssignment}

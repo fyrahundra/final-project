@@ -3,7 +3,7 @@ import { db } from '$lib/server/db/index';
 import { sessionTable, userTable } from '$lib/server/db/schema'; // adjust import path as needed
 import { getUserByName } from '$lib/server/db/query';
 import argon2 from 'argon2';
-import { createSession, destroySession } from '$lib/server/auth';
+import { createSession, destroySession, detectSuspiciousActivity } from '$lib/server/auth';
 
 export const load: ServerLoad = async ({ locals }) => {
 	// Your load function logic here
@@ -18,7 +18,7 @@ export const load: ServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	login: async ({ request, cookies }) => {
+	login: async ({ request, cookies, getClientAddress }) => {
 		const formData = await request.formData();
 		const userName = formData.get('username') as string;
 		const password = formData.get('password') as string;
@@ -38,8 +38,15 @@ export const actions: Actions = {
 				return fail(400, { error: 'Invalid username or password' });
 			}
 
+			let userAgent = request.headers.get('user-agent') || 'unknown';
+			let clientAddress = getClientAddress();
+
 			// Create session and set cookie
-			const session = await createSession(user.id);
+			const session = await createSession(user.id, clientAddress, userAgent, 14);
+			if (!session) {
+				return fail(500, { error: 'Failed to create session' });
+			}
+			await detectSuspiciousActivity(user.id);
 			cookies.set('session_token', session.token, {
 				path: '/',
 				httpOnly: true,

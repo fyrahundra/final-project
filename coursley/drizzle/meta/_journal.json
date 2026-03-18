@@ -64,6 +64,48 @@
       "when": 1773333600000,
       "tag": "0008_fix_user_columns_drift",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773830135624,
+      "tag": "0009_gray_dormammu",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773830667155,
+      "tag": "0010_numerous_rhino",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773831914120,
+      "tag": "0011_jittery_bastion",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1773833961946,
+      "tag": "0012_zippy_slapstick",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1773834021918,
+      "tag": "0013_complex_fallen_one",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773835193607,
+      "tag": "0014_real_obadiah_stane",
+      "breakpoints": true
     }
   ]
 }

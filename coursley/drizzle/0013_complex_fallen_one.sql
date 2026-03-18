@@ -1,0 +1,1 @@
+ALTER TABLE "session" ALTER COLUMN "client_address" DROP NOT NULL;

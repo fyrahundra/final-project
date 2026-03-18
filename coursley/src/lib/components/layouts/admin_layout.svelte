@@ -1,15 +1,15 @@
-<div class="pub-layout">
+<div class="admin-layout">
 	<slot></slot>
 </div>
 
 <style>
-	.pub-layout {
+	.admin-layout {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		min-height: 100vh;
 		padding: 2rem;
-		background-color: #f5f5f5;
+		background-color: var(--secondary-background-color);
 	}
 </style>

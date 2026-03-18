@@ -44,6 +44,7 @@
 		--secondary-background-color: #f5f5f5;
 		--card-color: #ffffff;
 		--card-p: #333333;
+		--hover-color: #e0e0e0;
 	}
 
 	.app-shell.dark-mode {
@@ -54,6 +55,7 @@
 		--secondary-background-color: #111111;
 		--card-color: #090e29;
 		--card-p: #f5f5f5;
+		--hover-color: #333333;
 	}
 
 	.app-shell {

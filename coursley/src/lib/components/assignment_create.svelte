@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { enhance } from '$app/forms';
     export let action = '?/createAssignment';
 
     let tempAssignment = {
@@ -72,6 +73,7 @@
         max-width: 600px;
         margin: 0 auto;
         padding: 20px;
+        color: #333333;
     }
 
     .title {

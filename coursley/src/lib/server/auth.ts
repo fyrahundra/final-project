@@ -3,15 +3,16 @@ import { sessionTable } from './db/schema';
 import { randomBytes, randomUUID } from 'crypto';
 import { getSession } from './db/query';
 import { eq } from 'drizzle-orm';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 
 export function generateSessionToken() {
 	return randomBytes(32).toString('hex');
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, clientAddress: string, userAgent?: string, maxAgeInDays: number = 14) {
 	const token = generateSessionToken();
-	const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+	const expiresAt = new Date();
+	expiresAt.setDate(expiresAt.getDate() + maxAgeInDays);
 
 	const [session] = await db
 		.insert(sessionTable)
@@ -19,7 +20,11 @@ export async function createSession(userId: string) {
 			id: randomUUID(),
 			userId: userId,
 			token,
-			expiresAt
+			expiresAt,
+			userAgent,
+			clientAddress,
+			lastUsedAt: new Date(),
+			deviceName: userAgent?.split('/')[0] || 'Unknown'
 		})
 		.returning({ id: sessionTable.id, token: sessionTable.token })
 		.execute();
@@ -84,4 +89,40 @@ export function validatePassword(password: string, name: string, email: string) 
 		errorMessage.push('Password should not contain your email');
 	}
 	return errorMessage;
+}
+
+export async function detectSuspiciousActivity( userId: string ) {
+	// Implement suspicious activity detection logic
+	const sessions = await db.query.sessionTable.findMany({
+		where: (eq(sessionTable.userId, userId)),
+		with: { user: true }
+	});
+
+	const ipAddresses = new Set(sessions.map((s) => s.clientAddress));
+	const recentSessions = sessions.filter(
+		(s) => s.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000)
+	);
+
+	// Alerts för:
+	// - För många IP-adresser
+	if (ipAddresses.size > 5) {
+		console.warn(`User ${userId} has sessions from ${ipAddresses.size} different IPs`);
+	}
+	// - För många nya sessions
+	if (recentSessions.length > 10) {
+		console.warn(`User ${userId} created ${recentSessions.length} sessions in 24h`);
+	}
+}
+
+export async function requireAuth(locals: { user: any, session: any }, cookies: any) {
+	if (!locals.user) {
+		if (locals.session?.token) {
+			await destroySession(locals.session.token);
+		}
+		cookies.delete('session_token', { path: '/' });
+		locals.user = null;
+		locals.session = null;
+		throw redirect(301, '/login');
+	}
+	return locals.user;
 }

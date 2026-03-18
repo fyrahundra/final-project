@@ -133,6 +133,25 @@
 		padding: 1rem;
 	}
 
+	.sidebar ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.sidebar h3,
+	.sidebar li {
+		margin: 0 0 0.5rem 0;
+	}
+
+	.sidebar a {
+		display: block;
+		width: 100%;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
 	.title {
 		font-size: 1.5rem;
 		position: relative;

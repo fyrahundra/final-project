@@ -2,7 +2,7 @@ import { fail, redirect, type Actions, type ServerLoad } from '@sveltejs/kit';
 import { hash } from 'argon2';
 import { db } from '$lib/server/db/index';
 import { userTable, sessionTable } from '$lib/server/db/schema';
-import { createSession, validatePassword } from '$lib/server/auth';
+import { createSession, detectSuspiciousActivity, validatePassword } from '$lib/server/auth';
 import { randomUUID } from 'crypto';
 import { eq, or } from 'drizzle-orm';
 
@@ -60,10 +60,14 @@ export const actions: Actions = {
 				role: 'student'
 			});
 
-			const session = await createSession(userId);
+			let userAgent = request.headers.get('user-agent') || 'unknown';
+			let clientAddress = request.headers.get('x-forwarded-for') || 'unknown';
+
+			const session = await createSession(userId, clientAddress, userAgent, 14);
 			if (!session) {
 				return fail(500, { error: 'Failed to create session' });
 			}
+			await detectSuspiciousActivity(userId);
 			cookies.set('session_token', session.token, {
 				path: '/',
 				httpOnly: true,

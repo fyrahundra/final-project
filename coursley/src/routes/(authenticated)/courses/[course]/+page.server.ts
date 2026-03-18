@@ -30,17 +30,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		where: (assignment, { eq }) => eq(assignment.courseId, courseId.toString())
 	});
 
-	return { course, assignments };
+	return { course, assignments, user };
 };
 
 export const actions: Actions = {
 	createAssignment: async ({ request, params, locals }) => {
 		const courseId = params.course;
+		const data = await getCourse(courseId?.toString() || '');
 		const user = locals.user;
 		if (!user) {
 			throw redirect(303, '/login');
 		}
-		if (user.role !== 'instructor') {
+		if (user.id !== data?.instructorId) {
 			throw redirect(303, '/courses');
 		}
 		if (!courseId) {

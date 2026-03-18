@@ -1,8 +1,8 @@
-import { pgTable, pgEnum, serial, integer, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, serial, integer, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Define the role enum for user roles
-export const roleEnum = pgEnum('role', ['student', 'instructor', 'admin']);
+export const roleEnum = pgEnum('role', ['student', 'instructor']);
 
 // User table
 export const userTable = pgTable('user', {
@@ -12,6 +12,7 @@ export const userTable = pgTable('user', {
 	passwordHash: text('passwordHash').notNull(),
 	profilePicture: text('profile_picture'),
 	role: roleEnum('role').notNull(),
+	isAdmin: boolean('is_admin').default(false),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	theme: text('theme').notNull().default('light') // light or dark
 });
@@ -45,7 +46,12 @@ export const sessionTable = pgTable('session', {
 		.references(() => userTable.id, { onDelete: 'cascade' })
 		.notNull(),
 	token: text('token').notNull().unique(),
-	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull()
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
+	clientAddress: text('client_address'),
+	userAgent: text('user_agent'),
+	deviceName: text('device_name'),
 });
 
 // Enrollment table (junction table for students and courses)

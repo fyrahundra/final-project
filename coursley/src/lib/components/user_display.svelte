@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 
 	export let user;
     export let onProfilePictureUpdated: ((profilePicture: string) => void) | undefined = undefined;
@@ -78,19 +79,26 @@
     {#if isOpen}
         <div class="dropdown-menu">
             <p>{user.email}</p>
-            <div class="profile-picture" style="width: 120px; height: 120px;">
-                {#if user.profilePicture}
-                    <img src="{user.profilePicture}" alt="" />
-                {:else}
-                    <div class="placeholder" style="font-size: 3rem; color: #ffffff;">
-                        <p>{user.name.charAt(0).toUpperCase()}</p>
-                    </div>
-                {/if}
+            <div style="position: relative;">
+                <div class="profile-picture" style="width: 120px; height: 120px;">
+                    {#if user.profilePicture}
+                        <img src="{user.profilePicture}" alt="" />
+                    {:else}
+                        <div class="placeholder" style="font-size: 3rem; color: #ffffff;">
+                            <p>{user.name.charAt(0).toUpperCase()}</p>
+                        </div>
+                    {/if}
+                </div>
+                <button class="change-picture" onclick={() => changeProfilePic()} disabled={isUploading}>
+                    {isUploading ? '...' : '🔄'}
+                </button>
             </div>
-            <button class="change-picture" onclick={() => changeProfilePic()} disabled={isUploading}>
-                {isUploading ? '...' : '🔄'}
-            </button>
             <h2> Hej <strong>{user.name}</strong>!</h2>
+            {#if user.isAdmin}
+                <button type="button" onclick={() => {goto('/dashboard')}}>
+                    Admin Panel
+                </button>
+            {/if}
             <form action="/api/theme" method="POST" use:enhance>
                 <button type="submit" name="theme" value={user.theme === 'light' ? 'dark' : 'light'}>
                     Switch to {user.theme === 'light' ? 'Dark' : 'Light'} Mode
@@ -157,8 +165,8 @@
 
     .change-picture {
         position: absolute;
-        bottom: 48%;
-        right: 29%;
+        bottom: 0%;
+        right: 0%;
         background-color: #ffffff;
         border-radius: 50%;
         width: 32px;

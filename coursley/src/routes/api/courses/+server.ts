@@ -75,7 +75,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			id: randomUUID(),
 			title,
 			description,
-			joinId: randomUUID(),
+			joinId: randomUUID().slice(0, 6).toUpperCase(), // Generate a short join ID
 			instructorId: locals.user.id
 		})
 		.returning({ id: courseTable.id })
@@ -90,5 +90,5 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		})
 		.execute();
 
-	throw redirect(303, '/courses');
+	return json({ success: true, message: 'Course created successfully', courseId: course.id }, { status: 201 });
 };

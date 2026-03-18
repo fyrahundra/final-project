@@ -1,0 +1,1 @@
+ALTER TABLE "session" ADD COLUMN "client_address" text NOT NULL;
