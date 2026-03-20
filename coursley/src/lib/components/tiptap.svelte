@@ -1,14 +1,20 @@
 <script lang="ts">
 	import { EditorContent } from 'svelte-tiptap';
 	import { Editor } from '@tiptap/core';
+	//Tiptap extensions
 	import StarterKit from '@tiptap/starter-kit';
 	import Subscript from '@tiptap/extension-subscript';
 	import Superscript from '@tiptap/extension-superscript';
+	import Highlight from '@tiptap/extension-highlight';
 	import { Color } from '@tiptap/extension-color';
 	import { TextStyle, FontFamily } from '@tiptap/extension-text-style';
+	import { CharacterCount } from '@tiptap/extensions';
+
 	import { onMount, onDestroy } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { writable } from 'svelte/store';
+
+	import Colorpicker from './colorpicker.svelte';
 
 	let editor: Editor;
 	let contentElement: HTMLDivElement;
@@ -23,9 +29,11 @@
 		currentDoc?.contentTitle || (isTemplate ? 'Assignment Template' : 'Untitled Document');
 	let selectedLang = 'en';
 	let currentColor = '#000000';
+	let currentHighlightColor = '';
 	let currentFont = 'Arial, sans-serif';
 	let currentHeading = 'Normal';
 	let saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
+	const characterLimit = 10000;
 
 	const update = writable(0);
 
@@ -122,7 +130,18 @@
 		}
 		editor = new Editor({
 			element: contentElement,
-			extensions: [StarterKit, Subscript, Superscript, Color, TextStyle, FontFamily],
+			extensions: [
+				StarterKit,
+				Subscript,
+				Superscript,
+				Highlight.configure({ multicolor: true }),
+				Color,
+				TextStyle,
+				FontFamily,
+				CharacterCount.configure({
+					limit: characterLimit
+				})
+			],
 			content: startContent,
 			editorProps: {
 				attributes: {
@@ -142,6 +161,11 @@
 				update.update((n) => n + 1);
 				const color = editor?.getAttributes('textStyle').color;
 				currentColor = color && /^#[0-9a-f]{6}$/i.test(color) ? color : '#000000';
+				const highlightColor = editor?.getAttributes('highlight').color;
+				currentHighlightColor =
+					highlightColor && /^#[0-9a-f]{6}$/i.test(highlightColor)
+						? highlightColor
+						: '';
 				const fontFamily = editor?.getAttributes('textStyle').fontFamily;
 				currentFont = fontFamily && fontFamily.trim() ? fontFamily : 'Arial, sans-serif';
 				const activeHeader = headerOptions.find((h) => h.isActive?.());
@@ -168,6 +192,24 @@
 	function changeColor(color: string) {
 		currentColor = color;
 		editor?.chain().focus().setColor(color).run();
+	}
+
+	function highlightColor(color: string) {
+		currentHighlightColor = color;
+		editor?.chain().focus().setHighlight({ color }).run();
+	}
+
+	function clearHighlight() {
+		currentHighlightColor = '';
+		editor?.chain().focus().unsetHighlight().run();
+	}
+
+	function getCharacterCount() {
+		return editor?.storage?.characterCount?.characters() ?? 0;
+	}
+
+	function getWordCount() {
+		return editor?.storage?.characterCount?.words() ?? 0;
 	}
 
 	const saveDocument = () => {
@@ -348,16 +390,17 @@
 			</div>
 			<div class="toolbar-divider"></div>
 			<div class="toolbar-section">
-				<label for="colorPicker" class="color-picker-label">
-					<input
-						type="color"
-						name="color"
-						id="colorPicker"
-						bind:value={currentColor}
-						oninput={(e) => changeColor((e.target as HTMLInputElement).value)}
-					/>
-					<span class="color-preview" style="background-color: {currentColor}"></span>
-				</label>
+				<Colorpicker
+					previewColor={currentColor}
+					Colortype="text"
+					applyColorCallback={changeColor}
+				/>
+				<Colorpicker
+					previewColor={currentHighlightColor}
+					Colortype="highlight"
+					clearCallback={clearHighlight}
+					applyColorCallback={highlightColor}
+				/>
 				<select
 					class="lang-select"
 					bind:value={selectedLang}
@@ -369,6 +412,13 @@
 				</select>
 			</div>
 			<div class="toolbar-section save-section">
+				{#key $update}
+					<div
+						class="count-display"
+					>
+						{getCharacterCount()} / {characterLimit} chars • {getWordCount()} words
+					</div>
+				{/key}
 				<button
 					class="save-btn"
 					class:saving={saveState === 'saving'}
@@ -556,38 +606,24 @@
 		min-width: 100px;
 	}
 
-	.color-picker-label {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		cursor: pointer;
-		padding: 4px 8px;
-		border-radius: 4px;
-		transition: background 0.2s;
-	}
-
-	.color-picker-label:hover {
-		background: rgba(60, 64, 67, 0.08);
-	}
-
-	#colorPicker {
-		position: absolute;
-		opacity: 0;
-		width: 0;
-		height: 0;
-	}
-
-	.color-preview {
-		width: 24px;
-		height: 24px;
-		border-radius: 3px;
-		border: 1px solid #dadce0;
-		display: inline-block;
-		cursor: pointer;
+	:global(.active-highlight) {
+		background: #e8f0fe;
 	}
 
 	.save-section {
 		margin-left: auto;
+		gap: 10px;
+	}
+
+	.count-display {
+		font-size: 0.8rem;
+		color: #5f6368;
+		white-space: nowrap;
+	}
+
+	.count-display.near-limit {
+		color: #d93025;
+		font-weight: 600;
 	}
 
 	.save-btn {

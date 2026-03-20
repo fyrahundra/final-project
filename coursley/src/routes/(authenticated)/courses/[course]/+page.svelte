@@ -1,6 +1,8 @@
 <script lang="ts">
 	import AssignmentCreate from '$lib/components/assignment_create.svelte';
 
+	import Colorpicker from '$lib/components/colorpicker.svelte';
+
 	export let data;
 
 	let showCreateAssignment = false;
