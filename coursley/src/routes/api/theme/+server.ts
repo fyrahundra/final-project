@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { userTable } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { publishThemeChanged } from '$lib/server/theme-stream';
+import { publishThemeChanged } from '$lib/server/stream';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     const formData = await request.formData();

@@ -61,7 +61,9 @@ export const actions: Actions = {
 			title,
 			description,
 			content,
-			courseId: courseId.toString()
-		});
+			courseId: courseId.toString(),
+			createdAt: new Date(),
+			updatedAt: new Date()
+		}).execute();
 	}
 };

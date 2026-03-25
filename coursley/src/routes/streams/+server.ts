@@ -1,5 +1,9 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { subscribeToProfilePicture, subscribeToTheme } from '$lib/server/theme-stream';
+import {
+	subscribeToAssignmentSubmitted,
+	subscribeToProfilePicture,
+	subscribeToTheme
+} from '$lib/server/stream';
 
 export const GET: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user) {
@@ -13,6 +17,7 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 	let pingInterval: ReturnType<typeof setInterval> | undefined;
 	let unsubscribeTheme: (() => void) | undefined;
 	let unsubscribeProfilePicture: (() => void) | undefined;
+	let unsubscribeAssignmentSubmitted: (() => void) | undefined;
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
@@ -24,6 +29,15 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			const sendProfilePicture = (profilePicture: string | null) => {
 				const data = JSON.stringify({ profilePicture });
 				controller.enqueue(encoder.encode(`event: profile_picture\ndata: ${data}\n\n`));
+			};
+
+			const sendAssignmentSubmitted = (payload: {
+				assignmentId: string;
+				userAssignmentId: string;
+				status: string;
+			}) => {
+				const data = JSON.stringify(payload);
+				controller.enqueue(encoder.encode(`event: assignment_submitted\ndata: ${data}\n\n`));
 			};
 
 			const cleanup = () => {
@@ -38,6 +52,10 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				if (unsubscribeProfilePicture) {
 					unsubscribeProfilePicture();
 					unsubscribeProfilePicture = undefined;
+				}
+				if (unsubscribeAssignmentSubmitted) {
+					unsubscribeAssignmentSubmitted();
+					unsubscribeAssignmentSubmitted = undefined;
 				}
 			};
 
@@ -55,6 +73,13 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				sendProfilePicture(profilePicture);
 			});
 
+			unsubscribeAssignmentSubmitted = subscribeToAssignmentSubmitted(
+				userId,
+				({ assignmentId, userAssignmentId, status }) => {
+					sendAssignmentSubmitted({ assignmentId, userAssignmentId, status });
+				}
+			);
+
 			pingInterval = setInterval(() => {
 				controller.enqueue(encoder.encode(': ping\n\n'));
 			}, 25000);
@@ -68,6 +93,9 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			}
 			if (unsubscribeProfilePicture) {
 				unsubscribeProfilePicture();
+			}
+			if (unsubscribeAssignmentSubmitted) {
+				unsubscribeAssignmentSubmitted();
 			}
 		}
 	});

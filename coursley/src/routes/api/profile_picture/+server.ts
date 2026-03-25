@@ -5,7 +5,7 @@ import { userTable } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { cloudinary } from '$lib/cloudinary';
 import { validateImageFile } from '$lib/validation';
-import { publishProfilePictureChanged } from '$lib/server/theme-stream';
+import { publishProfilePictureChanged } from '$lib/server/stream';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     const formData = await request.formData();

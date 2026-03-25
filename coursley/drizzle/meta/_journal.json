@@ -106,6 +106,34 @@
       "when": 1773835193607,
       "tag": "0014_real_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1774434697854,
+      "tag": "0015_pink_odin",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1774435467611,
+      "tag": "0016_sharp_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1774442132463,
+      "tag": "0017_worthless_matthew_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1774442293044,
+      "tag": "0018_cool_lake",
+      "breakpoints": true
     }
   ]
 }

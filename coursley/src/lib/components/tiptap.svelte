@@ -24,6 +24,10 @@
 	// Support both userAssignment (new) and assignment (legacy)
 	const currentDoc = data.userAssignment || data.assignment;
 	const isTemplate = data.isTemplate || false;
+	const isViewingSubmission = data.isViewingSubmission || false;
+	const isInstructorReadOnly = data.isInstructorReadOnly || false;
+	let isSubmitted = currentDoc?.status === 'submitted';
+	let isReadOnly = isInstructorReadOnly || isViewingSubmission || isSubmitted;
 	const templateId = data.templateId || '';
 	let title =
 		currentDoc?.contentTitle || (isTemplate ? 'Assignment Template' : 'Untitled Document');
@@ -33,6 +37,14 @@
 	let currentFont = 'Arial, sans-serif';
 	let currentHeading = 'Normal';
 	let saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
+	let turnInState: 'idle' | 'submitting' | 'submitted' | 'error' = 'idle';
+	let submissionSource: EventSource | null = null;
+	let lastSavedTime = data.userAssignment?.savedAt
+		? new Date(data.userAssignment.updatedAt).toLocaleTimeString([], {
+				hour: '2-digit',
+				minute: '2-digit'
+		})
+		: 'Never';
 	const characterLimit = 10000;
 
 	const update = writable(0);
@@ -140,8 +152,10 @@
 				FontFamily,
 				CharacterCount.configure({
 					limit: characterLimit
-				})
+				}),
+				
 			],
+			editable: !isReadOnly,
 			content: startContent,
 			editorProps: {
 				attributes: {
@@ -175,13 +189,42 @@
 	});
 
 	onDestroy(() => {
+		submissionSource?.close();
 		if (editor) {
 			editor.destroy();
 		}
 	});
 
+	onMount(() => {
+		submissionSource = new EventSource('/streams');
+		submissionSource.addEventListener('assignment_submitted', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as {
+				assignmentId: string;
+				userAssignmentId: string;
+				status: string;
+			};
+
+			const currentId = currentDoc?.id;
+			if (!currentId) return;
+
+			if (payload.userAssignmentId === currentId || payload.assignmentId === currentId) {
+				isSubmitted = payload.status === 'submitted';
+				isReadOnly = isInstructorReadOnly || isViewingSubmission || isSubmitted;
+				turnInState = isSubmitted ? 'submitted' : 'idle';
+				editor?.setEditable(!isReadOnly);
+				lastSavedTime = new Date().toLocaleTimeString([], {
+					hour: '2-digit',
+					minute: '2-digit'
+				});
+			}
+		});
+	});
+
 	const handleClick = () => {
-		editor?.commands.focus();
+		if (!isReadOnly) {
+			editor?.commands.focus();
+		}
 	};
 
 	function changeLanguage(lang: string) {
@@ -190,16 +233,19 @@
 	}
 
 	function changeColor(color: string) {
+		if (isReadOnly) return;
 		currentColor = color;
 		editor?.chain().focus().setColor(color).run();
 	}
 
 	function highlightColor(color: string) {
+		if (isReadOnly) return;
 		currentHighlightColor = color;
 		editor?.chain().focus().setHighlight({ color }).run();
 	}
 
 	function clearHighlight() {
+		if (isReadOnly) return;
 		currentHighlightColor = '';
 		editor?.chain().focus().unsetHighlight().run();
 	}
@@ -213,6 +259,7 @@
 	}
 
 	const saveDocument = () => {
+		if (isReadOnly) return;
 		const content = editor?.getJSON();
 		const formData = new FormData();
 
@@ -268,8 +315,10 @@
 				.then((result) => {
 					if (result.success || result.type === 'success') {
 						console.log('Document saved successfully');
-						saveState = 'saved';
-						setTimeout(() => (saveState = 'idle'), 2000);
+						saveState = 'saved';					lastSavedTime = new Date().toLocaleTimeString([], {
+						hour: '2-digit',
+						minute: '2-digit'
+					});						setTimeout(() => (saveState = 'idle'), 2000);
 					} else {
 						console.error('Failed to save document');
 						saveState = 'error';
@@ -284,6 +333,39 @@
 		}
 	};
 
+	const turnInDocument = () => {
+		if (isReadOnly) return;
+		const content = editor?.getJSON();
+		const formData = new FormData();
+
+		formData.append('id', currentDoc?.id || '');
+		formData.append('content', JSON.stringify(content));
+
+		turnInState = 'submitting';
+
+		fetch('/RTE?/turnIn', {
+			method: 'POST',
+			body: formData
+		})
+			.then((response) => response.json())
+			.then((result) => {
+				if (result.success || result.type === 'success') {
+					console.log('Document turned in successfully');
+					turnInState = 'submitted';
+					setTimeout(() => (turnInState = 'idle'), 2000);
+				} else {
+					console.error('Failed to turn in document');
+					turnInState = 'error';
+					setTimeout(() => (turnInState = 'idle'), 2000);
+				}
+			})
+			.catch((error) => {
+				console.error('Error turning in document:', error);
+				turnInState = 'error';
+				setTimeout(() => (turnInState = 'idle'), 2000);
+			});
+	};
+
 	function actionTemplate(
 		commandFn: (chain: any) => any,
 		activeCheck: string,
@@ -291,6 +373,7 @@
 	) {
 		return {
 			action: () => {
+				if (isReadOnly) return;
 				commandFn(editor?.chain().focus()).run();
 				update.update((n) => n + 1);
 			},
@@ -332,13 +415,18 @@
 					name="title"
 					type="text"
 					bind:value={title}
+					readonly={isReadOnly}
 					aria-label="Document title"
 					onblur={(e) => e.currentTarget.form?.requestSubmit()}
 				/>
 				<input type="hidden" name="id" value={currentDoc?.id} />
 			</form>
 		{/if}
+		{#if isReadOnly}
+			<p class="readonly-banner">This submission is read-only.</p>
+		{/if}
 		<div class="toolbar">
+			{#if !isReadOnly}
 			<div class="toolbar-section">
 				<select
 					class="font-select"
@@ -411,7 +499,9 @@
 					{/each}
 				</select>
 			</div>
+			{/if}
 			<div class="toolbar-section save-section">
+				<p>Last saved: {lastSavedTime}</p>
 				{#key $update}
 					<div
 						class="count-display"
@@ -419,29 +509,54 @@
 						{getCharacterCount()} / {characterLimit} chars • {getWordCount()} words
 					</div>
 				{/key}
-				<button
-					class="save-btn"
-					class:saving={saveState === 'saving'}
-					class:saved={saveState === 'saved'}
-					class:error={saveState === 'error'}
-					disabled={saveState === 'saving'}
-					onmousedown={(e) => {
-						e.preventDefault();
-						if (saveState !== 'saving') {
-							saveDocument();
-						}
-					}}
-				>
-					{#if saveState === 'saving'}
-						⏳ Saving...
-					{:else if saveState === 'saved'}
-						✅ Saved!
-					{:else if saveState === 'error'}
-						❌ Error
-					{:else}
-						💾 Save
-					{/if}
-				</button>
+				{#if !isReadOnly}
+					<button
+						class="save-btn"
+						class:saving={saveState === 'saving'}
+						class:saved={saveState === 'saved'}
+						class:error={saveState === 'error'}
+						disabled={saveState === 'saving'}
+						onmousedown={(e) => {
+							e.preventDefault();
+							if (saveState !== 'saving') {
+								saveDocument();
+							}
+						}}
+					>
+						{#if saveState === 'saving'}
+							⏳ Saving...
+						{:else if saveState === 'saved'}
+							✅ Saved!
+						{:else if saveState === 'error'}
+							❌ Error
+						{:else}
+							💾 Save
+						{/if}
+					</button>
+					<button 
+						class="turn-in-btn"
+						class:submitting={turnInState === 'submitting'}
+						class:submitted={turnInState === 'submitted'}
+						class:error={turnInState === 'error'}
+						disabled={turnInState === 'submitting'}
+						onmousedown={(e) => {
+							e.preventDefault();
+							if (turnInState !== 'submitting') {
+								saveDocument();
+								turnInDocument();
+							}
+						}}>
+						{#if turnInState === 'submitting'}
+							⏳ Submitting...
+						{:else if turnInState === 'submitted'}
+							✅ Submitted!
+						{:else if turnInState === 'error'}
+							❌ Error
+						{:else}
+							📤 Turn In
+						{/if}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -456,18 +571,24 @@
 <style>
 	.editor-container {
 		border: 1px solid #dadce0;
-		border-radius: 0;
-		padding: 3rem 5rem;
-		height: 100%;
-		width: 100%;
-		max-width: 900px;
-		margin: 0 auto;
+		border-radius: 2px;
+		padding: 4.5rem 4.75rem 5rem;
+		width: min(100%, 816px);
+		height: 1056px;
+		margin: 0 auto 2.75rem;
 		box-sizing: border-box;
-		overflow: auto;
+		overflow-y: auto;
+		overflow-x: hidden;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
 		background: white;
 		box-shadow:
-			0 1px 2px 0 rgba(60, 64, 67, 0.3),
-			0 1px 3px 1px rgba(60, 64, 67, 0.15);
+			0 1px 3px rgba(60, 64, 67, 0.2),
+			0 10px 30px rgba(60, 64, 67, 0.16);
+	}
+
+	.editor-container::-webkit-scrollbar {
+		display: none;
 	}
 	.editor-container:hover {
 		border-color: #dadce0;
@@ -477,30 +598,32 @@
 	.editor-header {
 		position: sticky;
 		top: 0;
-		z-index: 10;
-		background: #f9fbfd;
-		border-bottom: 1px solid #dadce0;
-		padding: 8px 16px 0 16px;
-		margin-bottom: 1rem;
-		width: 100%;
-		box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.1);
+		z-index: 20;
+		background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+		border: 1px solid #d8dde3;
+		border-radius: 14px;
+		padding: 10px 14px;
+		margin: 0 auto 14px;
+		width: min(100%, 980px);
+		box-sizing: border-box;
+		box-shadow: 0 2px 10px rgba(60, 64, 67, 0.12);
 	}
 
 	.header-top {
-		padding: 8px 0 4px 0;
+		padding: 2px 0;
 	}
 
 	.editor-title {
-		font-size: 1.25rem;
+		font-size: 1.4rem;
 		font-weight: 400;
 		border: none;
 		background: transparent;
-		padding: 6px 8px;
+		padding: 7px 10px;
 		outline: none;
-		width: 100%;
+		width: min(100%, 640px);
 		color: #202124;
-		border-radius: 2px;
-		transition: background 0.2s;
+		border-radius: 8px;
+		transition: background 0.2s ease;
 	}
 
 	.editor-title:hover {
@@ -511,54 +634,55 @@
 		background: white;
 		box-shadow:
 			0 0 0 1px #1a73e8,
-			0 0 0 3px rgba(26, 115, 232, 0.1);
+			0 0 0 4px rgba(26, 115, 232, 0.12);
 	}
 
 	.toolbar {
 		display: flex;
-		gap: 4px;
+		gap: 6px;
 		align-items: center;
-		padding: 4px 0 8px 0;
+		padding: 8px 0 2px;
 		flex-wrap: wrap;
 	}
 
 	.toolbar-section {
 		display: flex;
-		gap: 2px;
+		gap: 4px;
 		align-items: center;
 	}
 
 	.toolbar-divider {
 		width: 1px;
-		height: 24px;
-		background: #dadce0;
-		margin: 0 8px;
+		height: 28px;
+		background: #dde2e7;
+		margin: 0 6px;
 	}
 
 	.editor-controls {
 		display: flex;
-		gap: 2px;
+		gap: 3px;
 	}
 
 	.editor-controls button {
-		background: transparent;
-		border: none;
+		background: #ffffff;
+		border: 1px solid transparent;
 		color: #3c4043;
 		padding: 6px 10px;
-		border-radius: 4px;
+		border-radius: 7px;
 		cursor: pointer;
 		font-size: 0.875rem;
 		font-weight: 500;
-		transition: background 0.2s;
+		transition: background 0.2s ease;
 		white-space: nowrap;
 	}
 
 	.editor-controls button:hover {
-		background: rgba(60, 64, 67, 0.08);
+		background: #f1f3f4;
 	}
 
 	.editor-controls button.active {
 		background: #e8f0fe;
+		border-color: #d2e3fc;
 		color: #1967d2;
 	}
 
@@ -566,10 +690,10 @@
 	.font-select,
 	.lang-select,
 	.header-select {
-		background: white;
+		background: #ffffff;
 		border: 1px solid #dadce0;
-		border-radius: 4px;
-		padding: 6px 24px 6px 8px;
+		border-radius: 8px;
+		padding: 7px 28px 7px 10px;
 		font-size: 0.875rem;
 		color: #3c4043;
 		cursor: pointer;
@@ -612,31 +736,48 @@
 
 	.save-section {
 		margin-left: auto;
-		gap: 10px;
+		gap: 8px;
+		padding-left: 4px;
+	}
+
+	.save-section p {
+		font-size: 0.8rem;
+		color: #5f6368;
+		white-space: nowrap;
+		margin: 0;
+		padding: 5px 10px;
 	}
 
 	.count-display {
 		font-size: 0.8rem;
 		color: #5f6368;
 		white-space: nowrap;
+		padding: 5px 10px;
+		background: #f1f3f4;
+		border-radius: 999px;
 	}
 
-	.count-display.near-limit {
-		color: #d93025;
-		font-weight: 600;
+	.readonly-banner {
+		margin: 0 0 8px;
+		padding: 7px 11px;
+		border-radius: 4px;
+		background: #fef7e0;
+		color: #8d6e00;
+		font-size: 0.85rem;
+		border: 1px solid #f9df8b;
 	}
 
 	.save-btn {
 		background: #1a73e8;
 		border: none;
 		color: white;
-		padding: 8px 16px;
-		border-radius: 4px;
+		padding: 8px 14px;
+		border-radius: 18px;
 		cursor: pointer;
 		font-size: 0.875rem;
 		font-weight: 500;
 		transition: all 0.2s;
-		box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3);
+		box-shadow: 0 1px 2px rgba(60, 64, 67, 0.22);
 	}
 
 	.save-btn:hover {
@@ -675,20 +816,69 @@
 		opacity: 0.8;
 	}
 
+	.turn-in-btn {
+		background: #1a73e8;
+		border: none;
+		color: white;
+		padding: 8px 14px;
+		border-radius: 18px;
+		cursor: pointer;
+		font-size: 0.875rem;
+		font-weight: 500;
+		transition: all 0.2s;
+		box-shadow: 0 1px 2px rgba(60, 64, 67, 0.22);
+	}
+
+	.turn-in-btn:hover {
+		background: #1765cc;
+		box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.4);
+	}
+
+	.turn-in-btn:active {
+		background: #1557b0;
+	}
+
+	.turn-in-btn.submitting {
+		background: #5f6368;
+		cursor: not-allowed;
+		opacity: 0.8;
+	}
+
+	.turn-in-btn.submitted {
+		background: #1e8e3e;
+	}
+
+	.turn-in-btn.submitted:hover {
+		background: #188038;
+	}
+
+	.turn-in-btn.error {
+		background: #d93025;
+	}
+
+	.turn-in-btn.error:hover {
+		background: #c5221f;
+	}
+
 	:global(.ProseMirror) {
+		min-height: 900px;
 		height: 100%;
 		outline: none;
 		font-family: Arial, sans-serif;
 		font-size: 11pt;
-		line-height: 1.6;
+		line-height: 1.55;
 		color: #202124;
+	}
+
+	:global(.ProseMirror p) {
+		margin: 0 0 0.75rem;
 	}
 
 	:global(html, body) {
 		height: 100%;
 		margin: 0;
-		overflow: visible;
-		background: #f1f3f4;
+		overflow: auto;
+		background: #edf1f7;
 	}
 
 	.template-title {
@@ -713,5 +903,30 @@
 		color: #1967d2;
 		padding: 2px 8px;
 		border-radius: 3px;
+	}
+
+	@media (max-width: 920px) {
+		.editor-header {
+			border-radius: 12px;
+			padding: 8px 10px;
+		}
+
+		.editor-container {
+			width: 100%;
+			height: calc(100vh - 190px);
+			padding: 2.25rem 1.25rem 2.75rem;
+			box-shadow: 0 6px 20px rgba(60, 64, 67, 0.14);
+		}
+
+		.save-section {
+			width: 100%;
+			margin-left: 0;
+			justify-content: flex-end;
+			padding-top: 4px;
+		}
+
+		.editor-title {
+			font-size: 1.2rem;
+		}
 	}
 </style>

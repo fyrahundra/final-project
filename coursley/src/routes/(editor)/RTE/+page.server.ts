@@ -1,12 +1,62 @@
 import type { Actions, ServerLoad } from '@sveltejs/kit';
 import { assignmentTable, userAssignmentTable } from '$lib/server/db/schema';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { publishAssignmentSubmitted } from '$lib/server/stream';
 
-export const load: ServerLoad = async ({ url }) => {
-	const id = url.searchParams.get('id');
+async function isCourseInstructorForDocument(id: string, userId?: string) {
+	if (!id || !userId) return false;
+
+	const userAssignment = await db.query.userAssignmentTable.findFirst({
+		where: (ua, { eq }) => eq(ua.id, id),
+		with: {
+			assignment: {
+				with: {
+					course: true
+				}
+			}
+		}
+	});
+
+	if (userAssignment?.assignment?.course?.instructorId) {
+		return userAssignment.assignment.course.instructorId === userId;
+	}
+
+	const assignment = await db.query.assignmentTable.findFirst({
+		where: (a, { eq }) => eq(a.id, id),
+		with: {
+			course: true
+		}
+	});
+
+	return assignment?.course?.instructorId === userId;
+}
+
+export const load: ServerLoad = async ({ url, locals }) => {
+	const id = url.searchParams.get('id')?.trim() || null;
 	const mode = url.searchParams.get('mode');
 	const templateId = url.searchParams.get('templateId');
+	const view = url.searchParams.get('view');
+	const isInstructorReadOnly = id
+		? await isCourseInstructorForDocument(id, locals.user?.id)
+		: false;
+
+	// If view=submission, we are viewing a turned in assignment submission - load the user assignment data
+	if (view === 'submission') {
+		const userAssignment = await db
+			.select()
+			.from(userAssignmentTable)
+			.where(eq(userAssignmentTable.id, String(id)))
+			.execute();
+
+		return {
+			assignment: null,
+			userAssignment: userAssignment[0] || null,
+			isTemplate: false,
+			isViewingSubmission: true,
+			isInstructorReadOnly
+		};
+	}
 
 	// Template mode - no database lookup needed
 	if (mode === 'template') {
@@ -14,12 +64,19 @@ export const load: ServerLoad = async ({ url }) => {
 			assignment: null,
 			userAssignment: null,
 			isTemplate: true,
-			templateId: templateId
+			templateId: templateId,
+			isInstructorReadOnly: false
 		};
 	}
 
 	if (!id) {
-		return { assignment: null, userAssignment: null, isTemplate: false };
+		return {
+			assignment: null,
+			userAssignment: null,
+			isTemplate: false,
+			isViewingSubmission: false,
+			isInstructorReadOnly
+		};
 	}
 
 	// Check if it's a user assignment (new flow) or regular assignment (legacy)
@@ -33,7 +90,9 @@ export const load: ServerLoad = async ({ url }) => {
 		return {
 			assignment: null,
 			userAssignment: userAssignment[0],
-			isTemplate: false
+			isTemplate: false,
+			isViewingSubmission: false,
+			isInstructorReadOnly
 		};
 	}
 
@@ -47,15 +106,21 @@ export const load: ServerLoad = async ({ url }) => {
 	return {
 		assignment: assignment[0] || null,
 		userAssignment: null,
-		isTemplate: false
+		isTemplate: false,
+		isViewingSubmission: false,
+		isInstructorReadOnly
 	};
 };
 
 export const actions: Actions = {
-	changeTitle: async ({ request }) => {
+	changeTitle: async ({ request, locals }) => {
 		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+
+		if (await isCourseInstructorForDocument(id, locals.user?.id)) {
+			return { success: false, error: 'Course instructors have read-only access to submissions' };
+		}
 		const title = formData.get('title');
-		const id = formData.get('id');
 
 		try {
 			// Try to update user assignment first
@@ -70,7 +135,7 @@ export const actions: Actions = {
 					.update(userAssignmentTable)
 					.set({
 						contentTitle: String(title),
-						updatedAt: new Date()
+						updatedAt: sql`CURRENT_TIMESTAMP`
 					})
 					.where(eq(userAssignmentTable.id, String(id)))
 					.returning();
@@ -90,10 +155,14 @@ export const actions: Actions = {
 		}
 	},
 
-	saveDocument: async ({ request }) => {
+	saveDocument: async ({ request, locals }) => {
 		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+
+		if (await isCourseInstructorForDocument(id, locals.user?.id)) {
+			return { success: false, error: 'Course instructors have read-only access to submissions' };
+		}
 		const content = formData.get('content');
-		const id = formData.get('id');
 
 		try {
 			// Try to update user assignment first
@@ -108,7 +177,8 @@ export const actions: Actions = {
 					.update(userAssignmentTable)
 					.set({
 						content: String(content),
-						updatedAt: new Date()
+						updatedAt: sql`CURRENT_TIMESTAMP`,
+						savedAt: sql`CURRENT_TIMESTAMP`
 					})
 					.where(eq(userAssignmentTable.id, String(id)))
 					.returning();
@@ -139,6 +209,77 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error saving template:', error);
 			return { success: false, error: 'Failed to save template' };
+		}
+	},
+
+	turnIn: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+
+		if (await isCourseInstructorForDocument(id, locals.user?.id)) {
+			return { success: false, error: 'Course instructors have read-only access to submissions' };
+		}
+
+		try {
+			// Try to update user assignment first
+			const userAssignment = await db
+				.select()
+				.from(userAssignmentTable)
+				.where(eq(userAssignmentTable.id, String(id)))
+				.execute();
+
+			if (userAssignment.length > 0) {
+				const [updated] = await db
+					.update(userAssignmentTable)
+					.set({
+						status: 'submitted',
+						updatedAt: sql`CURRENT_TIMESTAMP`,
+						turnedInAt: sql`CURRENT_TIMESTAMP`
+					})
+					.where(eq(userAssignmentTable.id, String(id)))
+					.returning();
+
+				await publishAssignmentSubmitted({
+					userId: updated.userId,
+					assignmentId: updated.assignmentId,
+					userAssignmentId: updated.id,
+					status: updated.status
+				});
+
+				const assignmentForCourse = await db.query.assignmentTable.findFirst({
+					where: (a, { eq }) => eq(a.id, updated.assignmentId),
+					with: {
+						course: true
+					}
+				});
+
+				const instructorId = assignmentForCourse?.course?.instructorId;
+				if (instructorId && instructorId !== updated.userId) {
+					await publishAssignmentSubmitted({
+						userId: instructorId,
+						assignmentId: updated.assignmentId,
+						userAssignmentId: updated.id,
+						status: updated.status
+					});
+				}
+
+				return { success: true, userAssignment: updated };
+			}
+			
+			// Fallback to assignment table for legacy support
+			const [assignment] = await db
+				.update(userAssignmentTable)
+				.set({
+					status: 'submitted',
+					updatedAt: sql`CURRENT_TIMESTAMP`,
+					turnedInAt: sql`CURRENT_TIMESTAMP`,
+				})
+				.where(eq(assignmentTable.id, String(id)))
+				.returning();
+			return { success: true, assignment: assignment };
+		} catch (error) {
+			console.error('Error turning in assignment:', error);
+			return { success: false, error: 'Failed to turn in assignment' };
 		}
 	}
 };

@@ -67,6 +67,7 @@
 				class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 			/>
 			<button
+				type="button"
 				on:click={handleJoinCourse}
 				disabled={loading}
 				class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -138,6 +139,12 @@
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.75rem;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	.courses-scroll::-webkit-scrollbar {
+		display: none;
 	}
 
 	.course-card {

@@ -26,7 +26,10 @@ export const assignmentTable = pgTable('assignment', {
 	contentTitle: text('content_title'),
 	courseId: text('course_id')
 		.references(() => courseTable.id, { onDelete: 'cascade' })
-		.notNull()
+		.notNull(),
+	dueDate: timestamp('due_date', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Course table
@@ -79,7 +82,9 @@ export const userAssignmentTable = pgTable('user_assignment', {
 	contentTitle: text('content_title'),
 	status: text('status').notNull().default('in_progress'), // in_progress, submitted, graded
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	turnedInAt: timestamp('turned_in_at', { withTimezone: true }),
+	savedAt: timestamp('saved_at', { withTimezone: true }),
 });
 
 // Define relations

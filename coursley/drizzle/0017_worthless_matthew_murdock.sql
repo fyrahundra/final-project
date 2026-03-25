@@ -1,0 +1,1 @@
+ALTER TABLE "assignment" ADD COLUMN "saved_at" timestamp with time zone;

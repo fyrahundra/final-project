@@ -8,8 +8,10 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: local
+      PGTZ: Europe/Stockholm # Should be set to UTC in production, but for local development we can use the local timezone
     volumes:
       - pgdata:/var/lib/postgresql
+    command: postgres -c timezone=Europe/Stockholm # Should be set to UTC in production, but for local development we can use the local timezone
   redis:
     image: redis:7-alpine
     restart: always
