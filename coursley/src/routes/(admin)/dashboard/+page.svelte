@@ -1,5 +1,88 @@
 <script lang="ts">
 	export let data;
+
+	// TODO: Check edge cases for code execution, such as infinite loops, memory abuse, fork bombs, file system access, network access, etc.
+	const edgeCases = [
+  {
+    name: "Infinite loop",
+    code: `
+while True:
+    pass
+`
+  },
+  {
+    name: "Memory abuse",
+    code: `
+a = []
+while True:
+    a.append("A"*10**6)
+`
+  },
+  {
+    name: "Fork bomb",
+    code: `
+import os
+while True:
+    os.fork()
+`
+  },
+  {
+    name: "File system access",
+    code: `
+import os
+print(os.listdir("/"))
+`
+  },
+  {
+    name: "Network access",
+    code: `
+import requests
+requests.get("https://google.com")
+`
+  },
+  {
+    name: "Normal code",
+    code: `
+print("Hello world")
+`
+  }
+]
+
+	type Result = {
+    name: string;
+    stdout?: string;
+    stderr?: string;
+    error?: string;
+  };
+
+  let results: Result[] = [];
+  let running = false;
+
+  async function testEdgeCases() {
+    running = true;
+    results = [];
+
+    for (const test of edgeCases) {
+      let result: Result = { name: test.name };
+
+      try {
+        const res = await fetch("http://localhost:8000/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: test.code })
+        });
+
+        const data = await res.json();
+        result = { ...result, ...data };
+      } catch (err: any) {
+        result.error = err.message;
+      }
+
+      results = [...results, result]; // update live
+    }
+
+    running = false;
+  }
 </script>
 
 <h2 class="page-title">Active Sessions</h2>
@@ -34,6 +117,30 @@
 		{/each}
 	</tbody>
 </table>
+
+<button type="button" onclick={testEdgeCases} disabled={running}>
+	{running ? "Testing..." : "Test Edge Cases"}
+</button>
+
+{#if results.length > 0}
+	<h3>Test Results:</h3>
+	<ul>
+		{#each results as result}
+			<li>
+				<strong>{result.name}</strong>
+				{#if result.stdout}
+					<p>Output: {result.stdout}</p>
+				{/if}
+				{#if result.stderr}
+					<p>Error: {result.stderr}</p>
+				{/if}
+				{#if result.error}
+					<p>API Error: {result.error}</p>
+				{/if}
+			</li>
+		{/each}
+	</ul>
+{/if}
 
 <style>
 	.page-title {

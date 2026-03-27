@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import UserDisplay from '../user_display.svelte';
 	import CourseCreate from '../course_create.svelte';
+	import { page } from '$app/stores';
 
 	export let data;
 
@@ -10,6 +11,14 @@
 	let isCreateCourseOpen = false;
 	$: user = data.user
 		? { ...data.user, theme: currentTheme, profilePicture: currentProfilePicture }
+		: null;
+	$: pathname = $page.url.pathname;
+	$: segments = pathname.split('/').filter(Boolean);
+	$: currentCourseId = segments[0] === 'courses' ? segments[1] : null;
+	$: currentCourse = currentCourseId
+		? (data.courses ?? []).find(
+				(course: { id: string; title: string }) => course.id === currentCourseId
+			)
 		: null;
 
 	function applyTheme(theme: 'light' | 'dark') {
@@ -54,7 +63,15 @@
 
 <div class="auth-layout">
 	<div class="topbar">
-		<h1 class="title">Coursley</h1>
+		<h1 class="title" style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+			Coursley
+			|
+			<nav>
+				{#if currentCourse}
+					<a href={`/courses/${currentCourse.id}`}>{currentCourse.title}</a>
+				{/if}
+			</nav>
+		</h1>
 		<!--TODO: Implement user info display with profile picture-->
 		{#if data.user}
 			<UserDisplay {user} onProfilePictureUpdated={handleProfilePictureUpdated} />

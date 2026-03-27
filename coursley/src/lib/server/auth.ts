@@ -33,13 +33,18 @@ export async function createSession(userId: string, clientAddress: string, userA
 }
 
 export async function validateSession(token: string) {
-	const session = await getSession(token);
-	if (!session) return null;
-	if (session.expiresAt < new Date()) {
-		await destroySession(token);
+	try {
+		const session = await getSession(token);
+		if (!session) return null;
+		if (session.expiresAt < new Date()) {
+			await destroySession(token);
+			return null;
+		}
+		return session;
+	} catch (error) {
+		console.error('Session validation failed. Clearing session cookie fallback will be used.', error);
 		return null;
 	}
-	return session;
 }
 
 export async function refreshSession(token: string) {

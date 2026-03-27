@@ -1,76 +1,29 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { userAssignmentTable, enrollmentTable } from '$lib/server/db/schema';
+import { userAssignmentTable } from '$lib/server/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { publishAssignmentSubmitted } from '$lib/server/stream';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals, parent }) => {
 	const assignmentId = params.assignment;
-	const courseId = params.course;
 	const userId = locals.user?.id;
+	const parentData = await parent();
+	const assignment = parentData.assignment;
+	const isInstructorView = parentData.isInstructorView;
+	const accessError = parentData.accessError;
 
 	if (!userId) {
-		return { assignment: null, userAssignment: null, error: 'Not authenticated' };
+		return { userAssignment: null, error: 'Not authenticated' };
 	}
 
-	// Get the assignment template
-	const assignment = await db.query.assignmentTable.findFirst({
-		where: (assignment, { eq }) => eq(assignment.id, assignmentId),
-		with: {
-			course: true
-		}
-	});
-
-	if (!assignment) {
+	if (accessError || !assignment || isInstructorView) {
 		return {
-			assignment: null,
 			userAssignment: null,
-			studentAssignments: [],
-			isInstructorView: false,
-			error: 'Assignment not found'
-		};
-	}
-
-	const isCourseInstructor = assignment.course?.instructorId === userId;
-	const isAdmin = locals.user?.isAdmin === true;
-	const canViewInstructorData = isCourseInstructor || isAdmin;
-
-	// Check if user is enrolled in the course
-	const enrollment = await db.query.enrollmentTable.findFirst({
-		where: (enrollment, { and, eq }) =>
-			and(eq(enrollment.studentId, userId), eq(enrollment.courseId, courseId))
-	});
-
-	if (!enrollment && !canViewInstructorData) {
-		return {
-			assignment,
-			userAssignment: null,
-			studentAssignments: [],
-			isInstructorView: false,
-			error: 'Not enrolled in this course'
-		};
-	}
-
-	if (canViewInstructorData) {
-		const studentAssignments = await db.query.userAssignmentTable.findMany({
-			where: (userAssignment, { eq }) => eq(userAssignment.assignmentId, assignmentId),
-			with: {
-				user: true
-			},
-			orderBy: (userAssignment, { desc }) => [desc(userAssignment.updatedAt)]
-		});
-
-		return {
-			assignment,
-			userAssignment: null,
-			studentAssignments,
-			isInstructorView: true,
 			error: null
 		};
 	}
 
-	// Get or create user assignment
 	let userAssignment = await db.query.userAssignmentTable.findFirst({
 		where: (userAssignment, { and, eq }) =>
 			and(eq(userAssignment.userId, userId), eq(userAssignment.assignmentId, assignmentId))
@@ -94,13 +47,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	return {
-		assignment,
 		userAssignment,
-		studentAssignments: [],
-		isInstructorView: false,
 		error: null
 	};
-	
 };
 
 export const actions: Actions = {

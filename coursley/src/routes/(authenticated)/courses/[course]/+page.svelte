@@ -10,7 +10,7 @@
 <h3>{data.course?.description}</h3>
 
 <div class="course-meta-row">
-	{#if data.course?.instructorId === data.user?.id}
+	{#if data.isInstructor}
 		<h4>Course ID: {data.course?.joinId}</h4>
 		<button class="create-btn" on:click={() => (showCreateAssignment = true)}>Create Assignment</button>
 	{/if}
