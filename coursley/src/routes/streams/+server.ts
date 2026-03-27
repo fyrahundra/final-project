@@ -4,6 +4,14 @@ import {
 	subscribeToProfilePicture,
 	subscribeToTheme
 } from '$lib/server/stream';
+import { env } from '$env/dynamic/private';
+
+function resolveAutosaveIntervalMs() {
+	const raw = env.RTE_AUTOSAVE_INTERVAL_MS;
+	const parsed = Number(raw);
+	if (!Number.isFinite(parsed)) return 30000;
+	return Math.max(5000, Math.round(parsed));
+}
 
 export const GET: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user) {
@@ -11,22 +19,28 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 	}
 
 	const encoder = new TextEncoder();
+	const autosaveIntervalMs = resolveAutosaveIntervalMs();
 	const userId = locals.user.id;
 	const initialTheme: 'light' | 'dark' = locals.user.theme === 'dark' ? 'dark' : 'light';
 	const initialProfilePicture = locals.user.profilePicture ?? null;
 	let pingInterval: ReturnType<typeof setInterval> | undefined;
+	let autosaveInterval: ReturnType<typeof setInterval> | undefined;
 	let unsubscribeTheme: (() => void) | undefined;
 	let unsubscribeProfilePicture: (() => void) | undefined;
 	let unsubscribeAssignmentSubmitted: (() => void) | undefined;
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
+			let isClosed = false;
+
 			const sendTheme = (theme: 'light' | 'dark') => {
+				if (isClosed) return;
 				const data = JSON.stringify({ theme });
 				controller.enqueue(encoder.encode(`event: theme\ndata: ${data}\n\n`));
 			};
 
 			const sendProfilePicture = (profilePicture: string | null) => {
+				if (isClosed) return;
 				const data = JSON.stringify({ profilePicture });
 				controller.enqueue(encoder.encode(`event: profile_picture\ndata: ${data}\n\n`));
 			};
@@ -36,14 +50,31 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				userAssignmentId: string;
 				status: string;
 			}) => {
+				if (isClosed) return;
 				const data = JSON.stringify(payload);
 				controller.enqueue(encoder.encode(`event: assignment_submitted\ndata: ${data}\n\n`));
 			};
 
+			const sendAutosaveTick = () => {
+				if (isClosed) return;
+				const data = JSON.stringify({
+					intervalMs: autosaveIntervalMs,
+					timestamp: new Date().toISOString()
+				});
+				controller.enqueue(encoder.encode(`event: autosave_tick\ndata: ${data}\n\n`));
+			};
+
 			const cleanup = () => {
+				if (isClosed) return;
+				isClosed = true;
+
 				if (pingInterval) {
 					clearInterval(pingInterval);
 					pingInterval = undefined;
+				}
+				if (autosaveInterval) {
+					clearInterval(autosaveInterval);
+					autosaveInterval = undefined;
 				}
 				if (unsubscribeTheme) {
 					unsubscribeTheme();
@@ -64,6 +95,7 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			controller.enqueue(encoder.encode('retry: 3000\n\n'));
 			sendTheme(initialTheme);
 			sendProfilePicture(initialProfilePicture);
+			sendAutosaveTick();
 
 			unsubscribeTheme = subscribeToTheme(userId, ({ theme }) => {
 				sendTheme(theme);
@@ -81,10 +113,18 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			);
 
 			pingInterval = setInterval(() => {
+				if (isClosed) return;
 				controller.enqueue(encoder.encode(': ping\n\n'));
 			}, 25000);
+
+			autosaveInterval = setInterval(() => {
+				sendAutosaveTick();
+			}, autosaveIntervalMs);
 		},
 		cancel() {
+			if (autosaveInterval) {
+				clearInterval(autosaveInterval);
+			}
 			if (pingInterval) {
 				clearInterval(pingInterval);
 			}

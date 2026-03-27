@@ -39,12 +39,14 @@
 	let saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 	let turnInState: 'idle' | 'submitting' | 'submitted' | 'error' = 'idle';
 	let submissionSource: EventSource | null = null;
+	let hasUnsavedChanges = false;
 	let lastSavedTime = data.userAssignment?.savedAt
 		? new Date(data.userAssignment.updatedAt).toLocaleTimeString([], {
 				hour: '2-digit',
 				minute: '2-digit'
 		})
 		: 'Never';
+	let autoSaveLabel = '30s';
 	const characterLimit = 10000;
 
 	const update = writable(0);
@@ -166,6 +168,9 @@
 			},
 
 			onUpdate: () => {
+				if (!isReadOnly && !isTemplate) {
+					hasUnsavedChanges = true;
+				}
 				update.update((n) => n + 1);
 			},
 			onSelectionUpdate: () => {
@@ -197,6 +202,24 @@
 
 	onMount(() => {
 		submissionSource = new EventSource('/streams');
+
+		submissionSource.addEventListener('autosave_tick', (event) => {
+			if (isReadOnly || isTemplate || !currentDoc?.id) return;
+			if (!hasUnsavedChanges || saveState === 'saving') return;
+
+			const message = event as MessageEvent<string>;
+			try {
+				const payload = JSON.parse(message.data) as { intervalMs?: number };
+				if (typeof payload.intervalMs === 'number' && payload.intervalMs > 0) {
+					autoSaveLabel = `${Math.round(payload.intervalMs / 1000)}s`;
+				}
+			} catch (error) {
+				console.error('Invalid autosave tick payload.', error);
+			}
+
+			void saveDocument({ auto: true });
+		});
+
 		submissionSource.addEventListener('assignment_submitted', (event) => {
 			const message = event as MessageEvent<string>;
 			const payload = JSON.parse(message.data) as {
@@ -212,6 +235,7 @@
 				isSubmitted = payload.status === 'submitted';
 				isReadOnly = isInstructorReadOnly || isViewingSubmission || isSubmitted;
 				turnInState = isSubmitted ? 'submitted' : 'idle';
+				hasUnsavedChanges = false;
 				editor?.setEditable(!isReadOnly);
 				lastSavedTime = new Date().toLocaleTimeString([], {
 					hour: '2-digit',
@@ -258,8 +282,10 @@
 		return editor?.storage?.characterCount?.words() ?? 0;
 	}
 
-	const saveDocument = () => {
+	const saveDocument = async ({ auto = false }: { auto?: boolean } = {}) => {
 		if (isReadOnly) return;
+		if (saveState === 'saving') return;
+		if (auto && !hasUnsavedChanges) return;
 		const content = editor?.getJSON();
 		const formData = new FormData();
 
@@ -270,66 +296,67 @@
 			formData.append('content', JSON.stringify(content));
 			formData.append('templateId', templateId);
 
-			fetch('/RTE?/saveTemplate', {
-				method: 'POST',
-				body: formData
-			})
-				.then((response) => {
-					if (!response.ok) {
-						console.error('HTTP error:', response.status);
-						return response.text().then((text) => {
-							throw new Error(`Server error: ${response.status} - ${text}`);
-						});
-					}
-					return response.json();
-				})
-				.then((result) => {
-					if (result.success || result.type === 'success') {
-						console.log('Template saved successfully');
-						// Store in localStorage for parent window to retrieve
-						localStorage.setItem(templateId, JSON.stringify({ content: JSON.stringify(content) }));
-						saveState = 'saved';
-						// Close window after 1 second
-						setTimeout(() => window.close(), 1000);
-					} else {
-						console.error('Failed to save template:', result);
-						saveState = 'error';
-						setTimeout(() => (saveState = 'idle'), 2000);
-					}
-				})
-				.catch((error) => {
-					console.error('Error saving template:', error);
+			try {
+				const response = await fetch('/RTE?/saveTemplate', {
+					method: 'POST',
+					body: formData
+				});
+
+				if (!response.ok) {
+					console.error('HTTP error:', response.status);
+					const text = await response.text();
+					throw new Error(`Server error: ${response.status} - ${text}`);
+				}
+
+				const result = await response.json();
+				if (result.success || result.type === 'success') {
+					console.log('Template saved successfully');
+					localStorage.setItem(templateId, JSON.stringify({ content: JSON.stringify(content) }));
+					saveState = 'saved';
+					setTimeout(() => window.close(), 1000);
+				} else {
+					console.error('Failed to save template:', result);
 					saveState = 'error';
 					setTimeout(() => (saveState = 'idle'), 2000);
-				});
+				}
+			} catch (error) {
+				console.error('Error saving template:', error);
+				saveState = 'error';
+				setTimeout(() => (saveState = 'idle'), 2000);
+			}
 		} else {
 			// Regular document save
 			formData.append('id', currentDoc?.id || '');
 			formData.append('content', JSON.stringify(content));
 
-			fetch('/RTE?/saveDocument', {
-				method: 'POST',
-				body: formData
-			})
-				.then((response) => response.json())
-				.then((result) => {
-					if (result.success || result.type === 'success') {
+			try {
+				const response = await fetch('/RTE?/saveDocument', {
+					method: 'POST',
+					body: formData
+				});
+				const result = await response.json();
+
+				if (result.success || result.type === 'success') {
+					if (!auto) {
 						console.log('Document saved successfully');
-						saveState = 'saved';					lastSavedTime = new Date().toLocaleTimeString([], {
+					}
+					hasUnsavedChanges = false;
+					saveState = 'saved';
+					lastSavedTime = new Date().toLocaleTimeString([], {
 						hour: '2-digit',
 						minute: '2-digit'
-					});						setTimeout(() => (saveState = 'idle'), 2000);
-					} else {
-						console.error('Failed to save document');
-						saveState = 'error';
-						setTimeout(() => (saveState = 'idle'), 2000);
-					}
-				})
-				.catch((error) => {
-					console.error('Error saving document:', error);
+					});
+					setTimeout(() => (saveState = 'idle'), 2000);
+				} else {
+					console.error('Failed to save document');
 					saveState = 'error';
 					setTimeout(() => (saveState = 'idle'), 2000);
-				});
+				}
+			} catch (error) {
+				console.error('Error saving document:', error);
+				saveState = 'error';
+				setTimeout(() => (saveState = 'idle'), 2000);
+			}
 		}
 	};
 
@@ -351,6 +378,7 @@
 			.then((result) => {
 				if (result.success || result.type === 'success') {
 					console.log('Document turned in successfully');
+					hasUnsavedChanges = false;
 					turnInState = 'submitted';
 					setTimeout(() => (turnInState = 'idle'), 2000);
 				} else {
@@ -502,6 +530,9 @@
 			{/if}
 			<div class="toolbar-section save-section">
 				<p>Last saved: {lastSavedTime}</p>
+				{#if !isReadOnly && !isTemplate}
+					<p>Autosave: every {autoSaveLabel}</p>
+				{/if}
 				{#key $update}
 					<div
 						class="count-display"
