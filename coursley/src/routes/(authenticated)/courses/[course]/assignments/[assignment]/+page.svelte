@@ -49,17 +49,17 @@
 		{#if userAssignment.status === 'submitted'}
 			<p class="status-badge">Turned In</p>
 			<div>
-			<button class="open-btn" onclick={() => openInNewTab(`/RTE?id=${userAssignment?.id}&view=submission`)}
-				>View Submission</button
-			>
-			<form action="?/takeBack" method="post">
-				<button class="open-btn" type="submit">
-					Take Back
-				</button>
-				<input type="hidden" name="userAssignmentId" value={userAssignment?.id} />
-				<input type="hidden" name="assignmentId" value={assignment?.id} />
-				<input type="hidden" name="courseId" value={assignment?.courseId} />
-			</form>
+				<button
+					class="open-btn"
+					onclick={() => openInNewTab(`/RTE?id=${userAssignment?.id}&view=submission`)}
+					>View Submission</button
+				>
+				<form action="?/takeBack" method="post">
+					<button class="open-btn" type="submit"> Take Back </button>
+					<input type="hidden" name="userAssignmentId" value={userAssignment?.id} />
+					<input type="hidden" name="assignmentId" value={assignment?.id} />
+					<input type="hidden" name="courseId" value={assignment?.courseId} />
+				</form>
 			</div>
 		{:else}
 			<button class="open-btn" onclick={() => openInNewTab(`/RTE?id=${userAssignment?.id}`)}

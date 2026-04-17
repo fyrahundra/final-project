@@ -1,0 +1,116 @@
+﻿{
+	"summary": {
+		"total": 6,
+		"passed": 6,
+		"failed": 0
+	},
+	"results": [
+		{
+			"name": "Infinite loop",
+			"ok": false,
+			"status": 408,
+			"elapsedMs": 5211,
+			"response": {
+				"error": "timeout exceeded",
+				"error_code": "timeout_exceeded",
+				"stdout": "",
+				"stderr": "",
+				"output_truncated": false,
+				"stdout_truncated": false,
+				"stderr_truncated": false,
+				"stdout_original_length": 0,
+				"stderr_original_length": 0
+			},
+			"pass": true
+		},
+		{
+			"name": "Memory abuse",
+			"ok": false,
+			"status": 429,
+			"elapsedMs": 608,
+			"response": {
+				"error": "memory exceeded",
+				"error_code": "memory_exceeded",
+				"stdout": "",
+				"stderr": "",
+				"output_truncated": false,
+				"stdout_truncated": false,
+				"stderr_truncated": false,
+				"stdout_original_length": 0,
+				"stderr_original_length": 0
+			},
+			"pass": true
+		},
+		{
+			"name": "Fork bomb",
+			"ok": false,
+			"status": 403,
+			"elapsedMs": 1397,
+			"response": {
+				"error": "process creation disabled",
+				"error_code": "process_creation_disabled",
+				"stdout": "",
+				"stderr": "Traceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nTraceback (most recent call last):\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorBlockingIOErrorBlockingIOError: [Errno 11] Resource temporarily unavailable\n: : [Errno 11] Resource temporarily unavailable\n[Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorBlockingIOError: [Errno 11] Resource temporarily unavailable\n: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\nBlockingIOError: [Errno 11] Resource temporarily unavailable\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorBlockingIOError: [Errno 11] Resource temporarily unavailable\n: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorTraceback (most recent call last):\n: [Errno 11] Resource temporarily unavailable\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorTraceback (most recent call last):\n: [Errno 11] Resource temporarily unavailable\n  File \"<stdin>\", line 41, in <module>\nTraceback (most recent call last):\nBlockingIOErrorTraceback (most recent call last):\n: [Errno 11] Resource temporarily unavailable\n  File \"<stdin>\", line 41, in <module>\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorBlockingIOError: [Errno 11] Resource temporarily unavailable\n: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOErrorBlockingIOError: [Errno 11] Resource temporarily unavailable\n: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\nTraceback (most recent call last):\n  File \"<stdin>\", line 41, in <module>\nBlockingIOError: [Errno 11] Resource temporarily unavailable\n",
+				"output_truncated": false,
+				"stdout_truncated": false,
+				"stderr_truncated": false,
+				"stdout_original_length": 0,
+				"stderr_original_length": 4320
+			},
+			"pass": true
+		},
+		{
+			"name": "File system access",
+			"ok": false,
+			"status": 403,
+			"elapsedMs": 457,
+			"response": {
+				"error": "filesystem disabled",
+				"error_code": "filesystem_disabled",
+				"stdout": "",
+				"stderr": "Traceback (most recent call last):\n  File \"<stdin>\", line 40, in <module>\n  File \"<stdin>\", line 9, in _fs_blocked\nPermissionError: POLICY_FILESYSTEM_DISABLED\n",
+				"output_truncated": false,
+				"stdout_truncated": false,
+				"stderr_truncated": false,
+				"stdout_original_length": 0,
+				"stderr_original_length": 159
+			},
+			"pass": true
+		},
+		{
+			"name": "Network access",
+			"ok": false,
+			"status": 403,
+			"elapsedMs": 796,
+			"response": {
+				"error": "network disabled",
+				"error_code": "network_disabled",
+				"stdout": "",
+				"stderr": "Traceback (most recent call last):\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 1348, in do_open\n  File \"/usr/local/lib/python3.11/http/client.py\", line 1323, in request\n  File \"/usr/local/lib/python3.11/http/client.py\", line 1369, in _send_request\n  File \"/usr/local/lib/python3.11/http/client.py\", line 1318, in endheaders\n  File \"/usr/local/lib/python3.11/http/client.py\", line 1078, in _send_output\n  File \"/usr/local/lib/python3.11/http/client.py\", line 1016, in send\n  File \"/usr/local/lib/python3.11/http/client.py\", line 1488, in connect\n  File \"/usr/local/lib/python3.11/http/client.py\", line 982, in connect\n  File \"/usr/local/lib/python3.11/socket.py\", line 839, in create_connection\n  File \"/usr/local/lib/python3.11/socket.py\", line 974, in getaddrinfo\nsocket.gaierror: [Errno -3] Temporary failure in name resolution\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<stdin>\", line 40, in <module>\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 216, in urlopen\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 519, in open\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 536, in _open\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 496, in _call_chain\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 1391, in https_open\n  File \"/usr/local/lib/python3.11/urllib/request.py\", line 1351, in do_open\nurllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>\n",
+				"output_truncated": false,
+				"stdout_truncated": false,
+				"stderr_truncated": false,
+				"stdout_original_length": 0,
+				"stderr_original_length": 1530
+			},
+			"pass": true
+		},
+		{
+			"name": "Normal code",
+			"ok": true,
+			"status": 200,
+			"elapsedMs": 552,
+			"response": {
+				"stdout": "Hello world\n",
+				"stderr": "",
+				"output_truncated": false,
+				"stdout_truncated": false,
+				"stderr_truncated": false,
+				"stdout_original_length": 12,
+				"stderr_original_length": 0,
+				"exit_code": 0
+			},
+			"pass": true
+		}
+	]
+}

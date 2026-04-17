@@ -85,7 +85,7 @@
 		{/if}
 	</div>
 
-	<br>
+	<br />
 
 	<!-- Enrolled Courses Section -->
 	<div class="courses-section">
@@ -94,10 +94,7 @@
 		{#if data.courses.length > 0}
 			<div class="courses-scroll">
 				{#each data.courses as course (course.id)}
-					<a
-						href={`/courses/${course.id}`}
-						class="course-card"
-					>
+					<a href={`/courses/${course.id}`} class="course-card">
 						<div class="course-content">
 							<h3>{course.title}</h3>
 							<p>{course.description || 'No description'}</p>

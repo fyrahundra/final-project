@@ -150,7 +150,8 @@ export function subscribeToAssignmentSubmitted(
 ) {
 	void initRedis();
 
-	const listeners = localAssignmentSubmittedListeners.get(userId) ?? new Set<AssignmentSubmittedListener>();
+	const listeners =
+		localAssignmentSubmittedListeners.get(userId) ?? new Set<AssignmentSubmittedListener>();
 	listeners.add(listener);
 	localAssignmentSubmittedListeners.set(userId, listeners);
 

@@ -5,9 +5,9 @@ services:
     ports:
       - 5432:5432
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: local
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: db
       PGTZ: Europe/Stockholm # Should be set to UTC in production, but for local development we can use the local timezone
     volumes:
       - pgdata:/var/lib/postgresql

@@ -9,7 +9,12 @@ export function generateSessionToken() {
 	return randomBytes(32).toString('hex');
 }
 
-export async function createSession(userId: string, clientAddress: string, userAgent?: string, maxAgeInDays: number = 14) {
+export async function createSession(
+	userId: string,
+	clientAddress: string,
+	userAgent?: string,
+	maxAgeInDays: number = 14
+) {
 	const token = generateSessionToken();
 	const expiresAt = new Date();
 	expiresAt.setDate(expiresAt.getDate() + maxAgeInDays);
@@ -42,7 +47,10 @@ export async function validateSession(token: string) {
 		}
 		return session;
 	} catch (error) {
-		console.error('Session validation failed. Clearing session cookie fallback will be used.', error);
+		console.error(
+			'Session validation failed. Clearing session cookie fallback will be used.',
+			error
+		);
 		return null;
 	}
 }
@@ -96,10 +104,10 @@ export function validatePassword(password: string, name: string, email: string) 
 	return errorMessage;
 }
 
-export async function detectSuspiciousActivity( userId: string ) {
+export async function detectSuspiciousActivity(userId: string) {
 	// Implement suspicious activity detection logic
 	const sessions = await db.query.sessionTable.findMany({
-		where: (eq(sessionTable.userId, userId)),
+		where: eq(sessionTable.userId, userId),
 		with: { user: true }
 	});
 
@@ -119,7 +127,7 @@ export async function detectSuspiciousActivity( userId: string ) {
 	}
 }
 
-export async function requireAuth(locals: { user: any, session: any }, cookies: any) {
+export async function requireAuth(locals: { user: any; session: any }, cookies: any) {
 	if (!locals.user) {
 		if (locals.session?.token) {
 			await destroySession(locals.session.token);

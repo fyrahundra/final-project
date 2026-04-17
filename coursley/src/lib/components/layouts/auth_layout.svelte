@@ -63,9 +63,11 @@
 
 <div class="auth-layout">
 	<div class="topbar">
-		<h1 class="title" style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-			Coursley
-			|
+		<h1
+			class="title"
+			style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;"
+		>
+			Coursley |
 			<nav>
 				{#if currentCourse}
 					<a href={`/courses/${currentCourse.id}`}>{currentCourse.title}</a>

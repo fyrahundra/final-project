@@ -29,7 +29,7 @@ export const assignmentTable = pgTable('assignment', {
 		.notNull(),
 	dueDate: timestamp('due_date', { withTimezone: true }),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
 // Course table
@@ -54,7 +54,7 @@ export const sessionTable = pgTable('session', {
 	lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
 	clientAddress: text('client_address'),
 	userAgent: text('user_agent'),
-	deviceName: text('device_name'),
+	deviceName: text('device_name')
 });
 
 // Enrollment table (junction table for students and courses)
@@ -84,7 +84,7 @@ export const userAssignmentTable = pgTable('user_assignment', {
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 	turnedInAt: timestamp('turned_in_at', { withTimezone: true }),
-	savedAt: timestamp('saved_at', { withTimezone: true }),
+	savedAt: timestamp('saved_at', { withTimezone: true })
 });
 
 // Define relations

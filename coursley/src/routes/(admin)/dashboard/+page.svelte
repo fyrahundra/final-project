@@ -1,88 +1,37 @@
 <script lang="ts">
 	export let data;
 
-	// TODO: Check edge cases for code execution, such as infinite loops, memory abuse, fork bombs, file system access, network access, etc.
-	const edgeCases = [
-  {
-    name: "Infinite loop",
-    code: `
-while True:
-    pass
-`
-  },
-  {
-    name: "Memory abuse",
-    code: `
-a = []
-while True:
-    a.append("A"*10**6)
-`
-  },
-  {
-    name: "Fork bomb",
-    code: `
-import os
-while True:
-    os.fork()
-`
-  },
-  {
-    name: "File system access",
-    code: `
-import os
-print(os.listdir("/"))
-`
-  },
-  {
-    name: "Network access",
-    code: `
-import requests
-requests.get("https://google.com")
-`
-  },
-  {
-    name: "Normal code",
-    code: `
-print("Hello world")
-`
-  }
-]
-
 	type Result = {
-    name: string;
-    stdout?: string;
-    stderr?: string;
-    error?: string;
-  };
+		name: string;
+		stdout?: string;
+		stderr?: string;
+		error?: string;
+	};
 
-  let results: Result[] = [];
-  let running = false;
+	let running = false;
+	let output = '';
 
-  async function testEdgeCases() {
-    running = true;
-    results = [];
+	async function runCode(code: string): Promise<{ stdout: string; stderr: string }> {
+		running = true;
+		output = '';
 
-    for (const test of edgeCases) {
-      let result: Result = { name: test.name };
+		try {
+			const res = await fetch('http://localhost:8000/run', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code: code })
+			});
 
-      try {
-        const res = await fetch("http://localhost:8000/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: test.code })
-        });
+			const data = await res.json();
+			output = data.stdout || data.stderr || data.error || 'No output';
+		} catch (err: any) {
+			output = err.message;
+		}
 
-        const data = await res.json();
-        result = { ...result, ...data };
-      } catch (err: any) {
-        result.error = err.message;
-      }
+		running = false;
 
-      results = [...results, result]; // update live
-    }
-
-    running = false;
-  }
+		return { stdout: output, stderr: '' };
+	}
 </script>
 
 <h2 class="page-title">Active Sessions</h2>
@@ -98,7 +47,7 @@ print("Hello world")
 			<th>Created At</th>
 			<th>Last Used</th>
 			<th>Expires At</th>
-            <th>Client Address</th>
+			<th>Client Address</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -117,30 +66,6 @@ print("Hello world")
 		{/each}
 	</tbody>
 </table>
-
-<button type="button" onclick={testEdgeCases} disabled={running}>
-	{running ? "Testing..." : "Test Edge Cases"}
-</button>
-
-{#if results.length > 0}
-	<h3>Test Results:</h3>
-	<ul>
-		{#each results as result}
-			<li>
-				<strong>{result.name}</strong>
-				{#if result.stdout}
-					<p>Output: {result.stdout}</p>
-				{/if}
-				{#if result.stderr}
-					<p>Error: {result.stderr}</p>
-				{/if}
-				{#if result.error}
-					<p>API Error: {result.error}</p>
-				{/if}
-			</li>
-		{/each}
-	</ul>
-{/if}
 
 <style>
 	.page-title {

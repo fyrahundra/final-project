@@ -12,7 +12,9 @@
 <div class="course-meta-row">
 	{#if data.isInstructor}
 		<h4>Course ID: {data.course?.joinId}</h4>
-		<button class="create-btn" on:click={() => (showCreateAssignment = true)}>Create Assignment</button>
+		<button class="create-btn" on:click={() => (showCreateAssignment = true)}
+			>Create Assignment</button
+		>
 	{/if}
 </div>
 

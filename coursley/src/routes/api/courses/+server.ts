@@ -90,5 +90,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		})
 		.execute();
 
-	return json({ success: true, message: 'Course created successfully', courseId: course.id }, { status: 201 });
+	return json(
+		{ success: true, message: 'Course created successfully', courseId: course.id },
+		{ status: 201 }
+	);
 };

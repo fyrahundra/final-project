@@ -28,14 +28,17 @@ export const actions: Actions = {
 			throw new Error('Title, description, and content are required');
 		}
 
-		await db.insert(assignmentTable).values({
-			id: randomUUID(),
-			title,
-			description,
-			content,
-			courseId: courseId.toString(),
-			createdAt: new Date(),
-			updatedAt: new Date()
-		}).execute();
+		await db
+			.insert(assignmentTable)
+			.values({
+				id: randomUUID(),
+				title,
+				description,
+				content,
+				courseId: courseId.toString(),
+				createdAt: new Date(),
+				updatedAt: new Date()
+			})
+			.execute();
 	}
 };

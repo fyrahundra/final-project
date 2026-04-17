@@ -49,6 +49,9 @@
 	<section class="assignment-card">
 		<h1>{assignment?.title}</h1>
 		<p>{assignment?.description}</p>
+		<button class="open-btn" onclick={() => openInNewTab(`/RTE?`)}>
+			Open Assignment
+		</button>
 	</section>
 
 	<h4 class="section-title">Student submissions</h4>

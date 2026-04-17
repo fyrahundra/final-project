@@ -265,14 +265,14 @@ export const actions: Actions = {
 
 				return { success: true, userAssignment: updated };
 			}
-			
+
 			// Fallback to assignment table for legacy support
 			const [assignment] = await db
 				.update(userAssignmentTable)
 				.set({
 					status: 'submitted',
 					updatedAt: sql`CURRENT_TIMESTAMP`,
-					turnedInAt: sql`CURRENT_TIMESTAMP`,
+					turnedInAt: sql`CURRENT_TIMESTAMP`
 				})
 				.where(eq(assignmentTable.id, String(id)))
 				.returning();

@@ -1,12 +1,20 @@
 # Use lightweight Python image
 FROM python:3.11-slim
 
+# Install Docker CLI so this API can launch isolated ephemeral runner containers.
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends docker-cli \
+	&& rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/bin:${PATH}"
+
 # Copy project files
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create non-root user
 RUN useradd -m sandboxuser
+RUN usermod -aG 0 sandboxuser
 
 WORKDIR /home/sandboxuser
 COPY . .

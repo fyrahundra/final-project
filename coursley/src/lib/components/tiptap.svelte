@@ -44,7 +44,7 @@
 		? new Date(data.userAssignment.updatedAt).toLocaleTimeString([], {
 				hour: '2-digit',
 				minute: '2-digit'
-		})
+			})
 		: 'Never';
 	let autoSaveLabel = '30s';
 	const characterLimit = 10000;
@@ -154,8 +154,7 @@
 				FontFamily,
 				CharacterCount.configure({
 					limit: characterLimit
-				}),
-				
+				})
 			],
 			editable: !isReadOnly,
 			content: startContent,
@@ -182,9 +181,7 @@
 				currentColor = color && /^#[0-9a-f]{6}$/i.test(color) ? color : '#000000';
 				const highlightColor = editor?.getAttributes('highlight').color;
 				currentHighlightColor =
-					highlightColor && /^#[0-9a-f]{6}$/i.test(highlightColor)
-						? highlightColor
-						: '';
+					highlightColor && /^#[0-9a-f]{6}$/i.test(highlightColor) ? highlightColor : '';
 				const fontFamily = editor?.getAttributes('textStyle').fontFamily;
 				currentFont = fontFamily && fontFamily.trim() ? fontFamily : 'Arial, sans-serif';
 				const activeHeader = headerOptions.find((h) => h.isActive?.());
@@ -455,78 +452,78 @@
 		{/if}
 		<div class="toolbar">
 			{#if !isReadOnly}
-			<div class="toolbar-section">
-				<select
-					class="font-select"
-					bind:value={currentFont}
-					onchange={(e) => {
-						currentFont = (e.target as HTMLSelectElement).value;
-						editor?.chain().focus().setFontFamily(currentFont).run();
-					}}
-				>
-					{#each fontOptions as option}
-						<option value={option.value}>{option.name}</option>
+				<div class="toolbar-section">
+					<select
+						class="font-select"
+						bind:value={currentFont}
+						onchange={(e) => {
+							currentFont = (e.target as HTMLSelectElement).value;
+							editor?.chain().focus().setFontFamily(currentFont).run();
+						}}
+					>
+						{#each fontOptions as option}
+							<option value={option.value}>{option.name}</option>
+						{/each}
+					</select>
+					<select
+						class="header-select"
+						bind:value={currentHeading}
+						onchange={(e) => {
+							const selectedLabel = (e.target as HTMLSelectElement).value;
+							const header = headerOptions.find((h) => h.label === selectedLabel);
+							if (header) {
+								header.action();
+								editor?.commands.focus();
+								update.update((n) => n + 1);
+							}
+						}}
+					>
+						{#each headerOptions as option}
+							<option value={option.label}>{option.label}</option>
+						{/each}
+					</select>
+				</div>
+				<div class="toolbar-divider"></div>
+				<div class="toolbar-section editor-controls">
+					{#each formatingOptions as option}
+						{#key $update}
+							<button
+								type="button"
+								onmousedown={(e) => {
+									e.preventDefault();
+									option.action();
+								}}
+								class:active={option.isActive()}
+								title={option.name}
+							>
+								{option.name}
+							</button>
+						{/key}
 					{/each}
-				</select>
-				<select
-					class="header-select"
-					bind:value={currentHeading}
-					onchange={(e) => {
-						const selectedLabel = (e.target as HTMLSelectElement).value;
-						const header = headerOptions.find((h) => h.label === selectedLabel);
-						if (header) {
-							header.action();
-							editor?.commands.focus();
-							update.update((n) => n + 1);
-						}
-					}}
-				>
-					{#each headerOptions as option}
-						<option value={option.label}>{option.label}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="toolbar-divider"></div>
-			<div class="toolbar-section editor-controls">
-				{#each formatingOptions as option}
-					{#key $update}
-						<button
-							type="button"
-							onmousedown={(e) => {
-								e.preventDefault();
-								option.action();
-							}}
-							class:active={option.isActive()}
-							title={option.name}
-						>
-							{option.name}
-						</button>
-					{/key}
-				{/each}
-			</div>
-			<div class="toolbar-divider"></div>
-			<div class="toolbar-section">
-				<Colorpicker
-					previewColor={currentColor}
-					Colortype="text"
-					applyColorCallback={changeColor}
-				/>
-				<Colorpicker
-					previewColor={currentHighlightColor}
-					Colortype="highlight"
-					clearCallback={clearHighlight}
-					applyColorCallback={highlightColor}
-				/>
-				<select
-					class="lang-select"
-					bind:value={selectedLang}
-					onchange={(e) => changeLanguage((e.target as HTMLSelectElement).value)}
-				>
-					{#each langOptions as option}
-						<option value={option.code}>{option.label}</option>
-					{/each}
-				</select>
-			</div>
+				</div>
+				<div class="toolbar-divider"></div>
+				<div class="toolbar-section">
+					<Colorpicker
+						previewColor={currentColor}
+						Colortype="text"
+						applyColorCallback={changeColor}
+					/>
+					<Colorpicker
+						previewColor={currentHighlightColor}
+						Colortype="highlight"
+						clearCallback={clearHighlight}
+						applyColorCallback={highlightColor}
+					/>
+					<select
+						class="lang-select"
+						bind:value={selectedLang}
+						onchange={(e) => changeLanguage((e.target as HTMLSelectElement).value)}
+					>
+						{#each langOptions as option}
+							<option value={option.code}>{option.label}</option>
+						{/each}
+					</select>
+				</div>
 			{/if}
 			<div class="toolbar-section save-section">
 				<p>Last saved: {lastSavedTime}</p>
@@ -534,9 +531,7 @@
 					<p>Autosave: every {autoSaveLabel}</p>
 				{/if}
 				{#key $update}
-					<div
-						class="count-display"
-					>
+					<div class="count-display">
 						{getCharacterCount()} / {characterLimit} chars • {getWordCount()} words
 					</div>
 				{/key}
@@ -564,7 +559,7 @@
 							💾 Save
 						{/if}
 					</button>
-					<button 
+					<button
 						class="turn-in-btn"
 						class:submitting={turnInState === 'submitting'}
 						class:submitted={turnInState === 'submitted'}
@@ -576,7 +571,8 @@
 								saveDocument();
 								turnInDocument();
 							}
-						}}>
+						}}
+					>
 						{#if turnInState === 'submitting'}
 							⏳ Submitting...
 						{:else if turnInState === 'submitted'}

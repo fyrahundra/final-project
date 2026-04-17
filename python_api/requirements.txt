@@ -2,3 +2,6 @@ fastapi
 uvicorn
 pydantic
 docker
+requests
+matplotlib
+numpy
