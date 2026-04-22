@@ -1,5 +1,8 @@
 <script lang="ts">
 	import MonacoCode from '$lib/components/monaco_code.svelte';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
 
 	let output = '';
 	let plots: string[] = [];
@@ -7,6 +10,17 @@
 	let monacoComponent: MonacoCode;
 
     export let data;
+
+	onMount(() => {
+		console.log('User data on mount:', data?.user);
+		console.log('Code on start:', monacoComponent?.getCode());
+		if (!data?.user && browser) {
+			window.close();
+			if (!window.closed) {
+				void goto('/login');
+			}
+		}
+	});
 
 	async function runCode() {
         plots = [];
