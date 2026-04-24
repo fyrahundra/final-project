@@ -67,14 +67,13 @@
 			class="title"
 			style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;"
 		>
-			Coursley |
+			<a href="/courses">Coursley</a> |
 			<nav>
 				{#if currentCourse}
 					<a href={`/courses/${currentCourse.id}`}>{currentCourse.title}</a>
 				{/if}
 			</nav>
 		</h1>
-		<!--TODO: Implement user info display with profile picture-->
 		{#if data.user}
 			<UserDisplay {user} onProfilePictureUpdated={handleProfilePictureUpdated} />
 		{/if}
@@ -82,7 +81,6 @@
 	<div class="sidebar">
 		<nav>
 			<ul>
-				<h3><a href="/courses">My Courses</a></h3>
 				{#each data.courses as course}
 					<li><a href={`/courses/${course.id}`}>{course.title}</a></li>
 				{/each}

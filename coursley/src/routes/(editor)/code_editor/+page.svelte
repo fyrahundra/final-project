@@ -1,26 +1,29 @@
 <script lang="ts">
 	import MonacoCode from '$lib/components/monaco_code.svelte';
-	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
 
 	let output = '';
 	let plots: string[] = [];
 	let running = false;
 	let monacoComponent: MonacoCode;
 
-    export let data;
+	export let data;
 
-	onMount(() => {
-		console.log('User data on mount:', data?.user);
-		console.log('Code on start:', monacoComponent?.getCode());
-		if (!data?.user && browser) {
-			window.close();
-			if (!window.closed) {
-				void goto('/login');
-			}
+	const isTemplate = Boolean(data?.isTemplate);
+	const templateId = String(data?.templateId ?? '');
+
+	function saveTemplate() {
+		if (!isTemplate || !templateId) {
+			return;
 		}
-	});
+
+		const code = monacoComponent.getCode();
+		localStorage.setItem(templateId, JSON.stringify({ content: code }));
+		window.close();
+	}
+
+	function saveCode(){
+		const code = monacoComponent.getCode();
+	}
 
 	async function runCode() {
         plots = [];
@@ -65,6 +68,10 @@
 					<MonacoCode bind:this={monacoComponent} {data} />
 				</div>
 				<div class="panel-footer">
+					{#if isTemplate}
+						<button class="save-button" on:click={saveTemplate}>Save Template</button>
+					{/if}
+					<button class="save-button" on:click={saveCode}>Save</button>
 					<button class="run-button" on:click={runCode} disabled={running}>
 						{running ? 'Running...' : '▶ Run Code'}
 					</button>
@@ -76,13 +83,15 @@
 					<h3 class="panel-title">Output</h3>
 				</div>
 				<div class="output-body">
-					{#if plots.length > 0}
-						<div class="plots-container">
+					<div class="plots-container">
+						{#if plots.length > 0}
 							{#each plots as plot}
 								<img src={plot} alt="Plot" class="plot-image" />
 							{/each}
-						</div>
-					{/if}
+						{:else}
+							<p class="plots-empty">No plots yet. Run code that generates a plot.</p>
+						{/if}
+					</div>
 					<pre class="output-content">{output}</pre>
 				</div>
 			</div>
@@ -206,6 +215,22 @@
 		cursor: not-allowed;
 	}
 
+	.save-button {
+		padding: 0.75rem 1rem;
+		background: #15803d;
+		color: white;
+		border: none;
+		border-radius: 0.375rem;
+		font-size: 0.95rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.save-button:hover {
+		background: #166534;
+	}
+
 	.output-panel {
 		display: flex;
 		flex-direction: column;
@@ -248,22 +273,30 @@
 	}
 
 	.plots-container {
-        display: flex;
-        flex-wrap: wrap;
+		display: grid;
 		gap: 0.75rem;
 		padding: 0.875rem 1rem;
-        width: 100%;
-		flex: 3 1 0;
-		min-height: 0;
+		width: 100%;
+		max-width: 100%;
+		align-self: flex-start;
+		flex: 0 0 auto;
 		overflow: auto;
-        box-sizing: border-box;
+		box-sizing: border-box;
 		background: var(--background-color);
 		border: 1px solid #e0e0e0;
 		border-radius: 0.375rem;
 	}
 
+	.plots-empty {
+		margin: 0;
+		color: #6b7280;
+		font-size: 0.9rem;
+	}
+
 	.plot-image {
+		display: block;
 		max-width: 100%;
+		width: auto;
 		height: auto;
 		border-radius: 0.25rem;
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);

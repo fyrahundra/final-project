@@ -30,7 +30,9 @@
 	let isReadOnly = isInstructorReadOnly || isViewingSubmission || isSubmitted;
 	const templateId = data.templateId || '';
 	let title =
-		currentDoc?.contentTitle || (isTemplate ? 'Assignment Template' : 'Untitled Document');
+		currentDoc?.contentTitle ||
+		currentDoc?.title ||
+		(isTemplate ? 'Assignment Template' : 'Untitled Document');
 	let selectedLang = 'en';
 	let currentColor = '#000000';
 	let currentHighlightColor = '';
@@ -427,8 +429,11 @@
 							typeof result.data === 'object' &&
 							'assignment' in result.data
 						) {
-							title = (result.data as { assignment: { contentTitle: string } }).assignment
-								.contentTitle;
+							const assignmentResult = (result.data as {
+								assignment: { contentTitle?: string | null; title?: string | null };
+							}).assignment;
+							title =
+								assignmentResult.contentTitle || assignmentResult.title || 'Untitled Document';
 						} else {
 							console.error('Failed to update title');
 						}
@@ -447,7 +452,7 @@
 				<input type="hidden" name="id" value={currentDoc?.id} />
 			</form>
 		{/if}
-		{#if isReadOnly}
+				{#if isReadOnly && data.userAssignment}
 			<p class="readonly-banner">This submission is read-only.</p>
 		{/if}
 		<div class="toolbar">
@@ -559,30 +564,32 @@
 							💾 Save
 						{/if}
 					</button>
-					<button
-						class="turn-in-btn"
-						class:submitting={turnInState === 'submitting'}
-						class:submitted={turnInState === 'submitted'}
-						class:error={turnInState === 'error'}
-						disabled={turnInState === 'submitting'}
-						onmousedown={(e) => {
-							e.preventDefault();
-							if (turnInState !== 'submitting') {
-								saveDocument();
-								turnInDocument();
-							}
-						}}
-					>
-						{#if turnInState === 'submitting'}
-							⏳ Submitting...
-						{:else if turnInState === 'submitted'}
-							✅ Submitted!
-						{:else if turnInState === 'error'}
-							❌ Error
-						{:else}
-							📤 Turn In
-						{/if}
-					</button>
+					{#if data.userAssignment && !isInstructorReadOnly}
+						<button
+							class="turn-in-btn"
+							class:submitting={turnInState === 'submitting'}
+							class:submitted={turnInState === 'submitted'}
+							class:error={turnInState === 'error'}
+							disabled={turnInState === 'submitting'}
+							onmousedown={(e) => {
+								e.preventDefault();
+								if (turnInState !== 'submitting') {
+									saveDocument();
+									turnInDocument();
+								}
+							}}
+						>
+							{#if turnInState === 'submitting'}
+								⏳ Submitting...
+							{:else if turnInState === 'submitted'}
+								✅ Submitted!
+							{:else if turnInState === 'error'}
+								❌ Error
+							{:else}
+								📤 Turn In
+							{/if}
+						</button>
+					{/if}
 				{/if}
 			</div>
 		</div>

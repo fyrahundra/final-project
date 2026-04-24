@@ -7,6 +7,10 @@
 	let userAssignment: any = data.userAssignment;
 	let source: EventSource | null = null;
 
+	function getEditorTarget() {
+		return assignment?.type === 'code' ? 'code_editor' : 'RTE';
+	}
+
 	onMount(() => {
 		source = new EventSource('/streams');
 
@@ -33,8 +37,27 @@
 		source?.close();
 	});
 
-	function openInNewTab(url: string) {
-		window.open(url, '_blank', 'noopener,noreferrer');
+	async function openEditor(params: Record<string, string> = {}) {
+		const response = await fetch('/api/editor-entry', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({ target: getEditorTarget(), params })
+		});
+
+		if (!response.ok) {
+			console.error('Failed to create editor entry token');
+			return;
+		}
+
+		const payload = (await response.json()) as { url?: string };
+		if (!payload.url) {
+			console.error('Editor entry URL missing in response');
+			return;
+		}
+
+		window.open(payload.url, '_blank', 'noopener,noreferrer');
 	}
 </script>
 
@@ -51,7 +74,8 @@
 			<div>
 				<button
 					class="open-btn"
-					onclick={() => openInNewTab(`/RTE?id=${userAssignment?.id}&view=submission`)}
+					onclick={() =>
+						openEditor({ id: String(userAssignment?.id ?? '') })}
 					>View Submission</button
 				>
 				<form action="?/takeBack" method="post">
@@ -62,7 +86,9 @@
 				</form>
 			</div>
 		{:else}
-			<button class="open-btn" onclick={() => openInNewTab(`/RTE?id=${userAssignment?.id}`)}
+			<button
+				class="open-btn"
+				onclick={() => openEditor({ id: String(userAssignment?.id ?? '') })}
 				>Open Assignment</button
 			>
 		{/if}

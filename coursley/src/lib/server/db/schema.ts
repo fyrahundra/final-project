@@ -22,6 +22,7 @@ export const assignmentTable = pgTable('assignment', {
 	id: text('id').primaryKey(),
 	title: text('title').notNull(),
 	description: text('description'),
+	type: text('type').notNull().default('essay'),
 	content: text('content').notNull(),
 	contentTitle: text('content_title'),
 	courseId: text('course_id')
@@ -43,6 +44,7 @@ export const courseTable = pgTable('course', {
 		.notNull()
 });
 
+// Session table
 export const sessionTable = pgTable('session', {
 	id: text('id').primaryKey(),
 	userId: text('user_id')
@@ -55,6 +57,20 @@ export const sessionTable = pgTable('session', {
 	clientAddress: text('client_address'),
 	userAgent: text('user_agent'),
 	deviceName: text('device_name')
+});
+
+// Entry Token table
+export const entryTokenTable = pgTable('entry_token', {
+	id: text('id').primaryKey(),
+	token: text('token').notNull().unique(),
+	userId: text('user_id')
+		.references(() => userTable.id, { onDelete: 'cascade' })
+		.notNull(),
+	target: text('target').notNull(),
+	targetId: text('target_id'),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	usedAt: timestamp('used_at', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
 // Enrollment table (junction table for students and courses)

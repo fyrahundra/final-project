@@ -134,6 +134,27 @@
       "when": 1774442293044,
       "tag": "0018_cool_lake",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777019260338,
+      "tag": "0019_certain_king_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777023026281,
+      "tag": "0020_complex_ironclad",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777023863742,
+      "tag": "0021_last_proteus",
+      "breakpoints": true
     }
   ]
 }

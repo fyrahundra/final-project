@@ -4,6 +4,8 @@ import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
 import { publishAssignmentSubmitted } from '$lib/server/stream';
 
+const editorName = 'RTE';
+
 async function isCourseInstructorForDocument(id: string, userId?: string) {
 	if (!id || !userId) return false;
 
@@ -37,24 +39,14 @@ export const load: ServerLoad = async ({ url, locals }) => {
 	const mode = url.searchParams.get('mode');
 	const templateId = url.searchParams.get('templateId');
 	const view = url.searchParams.get('view');
-	const isInstructorReadOnly = id
-		? await isCourseInstructorForDocument(id, locals.user?.id)
-		: false;
 
-	// If view=submission, we are viewing a turned in assignment submission - load the user assignment data
-	if (view === 'submission') {
-		const userAssignment = await db
-			.select()
-			.from(userAssignmentTable)
-			.where(eq(userAssignmentTable.id, String(id)))
-			.execute();
-
+	if (!locals.user) {
 		return {
 			assignment: null,
-			userAssignment: userAssignment[0] || null,
+			userAssignment: null,
 			isTemplate: false,
-			isViewingSubmission: true,
-			isInstructorReadOnly
+			isViewingSubmission: false,
+			isInstructorReadOnly: false
 		};
 	}
 
@@ -75,7 +67,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			userAssignment: null,
 			isTemplate: false,
 			isViewingSubmission: false,
-			isInstructorReadOnly
+			isInstructorReadOnly: false
 		};
 	}
 
@@ -92,7 +84,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			userAssignment: userAssignment[0],
 			isTemplate: false,
 			isViewingSubmission: false,
-			isInstructorReadOnly
+			isInstructorReadOnly: await isCourseInstructorForDocument(id, locals.user?.id)
 		};
 	}
 
@@ -108,7 +100,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 		userAssignment: null,
 		isTemplate: false,
 		isViewingSubmission: false,
-		isInstructorReadOnly
+		isInstructorReadOnly: false
 	};
 };
 
@@ -116,25 +108,24 @@ export const actions: Actions = {
 	changeTitle: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const id = String(formData.get('id') || '');
+		const title = String(formData.get('title') || '');
 
-		if (await isCourseInstructorForDocument(id, locals.user?.id)) {
+		const userAssignment = await db
+			.select()
+			.from(userAssignmentTable)
+			.where(eq(userAssignmentTable.id, String(id)))
+			.execute();
+
+		if (userAssignment.length > 0 && (await isCourseInstructorForDocument(id, locals.user?.id))) {
 			return { success: false, error: 'Course instructors have read-only access to submissions' };
 		}
-		const title = formData.get('title');
 
 		try {
-			// Try to update user assignment first
-			const userAssignment = await db
-				.select()
-				.from(userAssignmentTable)
-				.where(eq(userAssignmentTable.id, String(id)))
-				.execute();
-
 			if (userAssignment.length > 0) {
 				const [updated] = await db
 					.update(userAssignmentTable)
 					.set({
-						contentTitle: String(title),
+						contentTitle: title,
 						updatedAt: sql`CURRENT_TIMESTAMP`
 					})
 					.where(eq(userAssignmentTable.id, String(id)))
@@ -142,10 +133,9 @@ export const actions: Actions = {
 				return { success: true, userAssignment: updated };
 			}
 
-			// Fallback to assignment table for legacy support
 			const [assignment] = await db
 				.update(assignmentTable)
-				.set({ contentTitle: String(title) })
+				.set({ title })
 				.where(eq(assignmentTable.id, String(id)))
 				.returning();
 			return { success: true, assignment: assignment };
@@ -158,20 +148,18 @@ export const actions: Actions = {
 	saveDocument: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const id = String(formData.get('id') || '');
+		const userAssignment = await db
+			.select()
+			.from(userAssignmentTable)
+			.where(eq(userAssignmentTable.id, String(id)))
+			.execute();
 
-		if (await isCourseInstructorForDocument(id, locals.user?.id)) {
+		if (userAssignment.length > 0 && (await isCourseInstructorForDocument(id, locals.user?.id))) {
 			return { success: false, error: 'Course instructors have read-only access to submissions' };
 		}
 		const content = formData.get('content');
 
 		try {
-			// Try to update user assignment first
-			const userAssignment = await db
-				.select()
-				.from(userAssignmentTable)
-				.where(eq(userAssignmentTable.id, String(id)))
-				.execute();
-
 			if (userAssignment.length > 0) {
 				const [updated] = await db
 					.update(userAssignmentTable)
@@ -185,7 +173,6 @@ export const actions: Actions = {
 				return { success: true, userAssignment: updated };
 			}
 
-			// Fallback to assignment table for legacy support
 			const [assignment] = await db
 				.update(assignmentTable)
 				.set({ content: String(content) })
@@ -215,68 +202,56 @@ export const actions: Actions = {
 	turnIn: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const id = String(formData.get('id') || '');
+		const userAssignment = await db
+			.select()
+			.from(userAssignmentTable)
+			.where(eq(userAssignmentTable.id, String(id)))
+			.execute();
+
+		if (!userAssignment.length) {
+			return { success: false, error: 'Legacy assignments cannot be submitted from the editor' };
+		}
 
 		if (await isCourseInstructorForDocument(id, locals.user?.id)) {
 			return { success: false, error: 'Course instructors have read-only access to submissions' };
 		}
 
 		try {
-			// Try to update user assignment first
-			const userAssignment = await db
-				.select()
-				.from(userAssignmentTable)
-				.where(eq(userAssignmentTable.id, String(id)))
-				.execute();
-
-			if (userAssignment.length > 0) {
-				const [updated] = await db
-					.update(userAssignmentTable)
-					.set({
-						status: 'submitted',
-						updatedAt: sql`CURRENT_TIMESTAMP`,
-						turnedInAt: sql`CURRENT_TIMESTAMP`
-					})
-					.where(eq(userAssignmentTable.id, String(id)))
-					.returning();
-
-				await publishAssignmentSubmitted({
-					userId: updated.userId,
-					assignmentId: updated.assignmentId,
-					userAssignmentId: updated.id,
-					status: updated.status
-				});
-
-				const assignmentForCourse = await db.query.assignmentTable.findFirst({
-					where: (a, { eq }) => eq(a.id, updated.assignmentId),
-					with: {
-						course: true
-					}
-				});
-
-				const instructorId = assignmentForCourse?.course?.instructorId;
-				if (instructorId && instructorId !== updated.userId) {
-					await publishAssignmentSubmitted({
-						userId: instructorId,
-						assignmentId: updated.assignmentId,
-						userAssignmentId: updated.id,
-						status: updated.status
-					});
-				}
-
-				return { success: true, userAssignment: updated };
-			}
-
-			// Fallback to assignment table for legacy support
-			const [assignment] = await db
+			const [updated] = await db
 				.update(userAssignmentTable)
 				.set({
 					status: 'submitted',
 					updatedAt: sql`CURRENT_TIMESTAMP`,
 					turnedInAt: sql`CURRENT_TIMESTAMP`
 				})
-				.where(eq(assignmentTable.id, String(id)))
+				.where(eq(userAssignmentTable.id, String(id)))
 				.returning();
-			return { success: true, assignment: assignment };
+
+			await publishAssignmentSubmitted({
+				userId: updated.userId,
+				assignmentId: updated.assignmentId,
+				userAssignmentId: updated.id,
+				status: updated.status
+			});
+
+			const assignmentForCourse = await db.query.assignmentTable.findFirst({
+				where: (a, { eq }) => eq(a.id, updated.assignmentId),
+				with: {
+					course: true
+				}
+			});
+
+			const instructorId = assignmentForCourse?.course?.instructorId;
+			if (instructorId && instructorId !== updated.userId) {
+				await publishAssignmentSubmitted({
+					userId: instructorId,
+					assignmentId: updated.assignmentId,
+					userAssignmentId: updated.id,
+					status: updated.status
+				});
+			}
+
+			return { success: true, userAssignment: updated };
 		} catch (error) {
 			console.error('Error turning in assignment:', error);
 			return { success: false, error: 'Failed to turn in assignment' };

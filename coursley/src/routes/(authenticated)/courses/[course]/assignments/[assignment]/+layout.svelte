@@ -9,6 +9,10 @@
 	let studentAssignments: any[] = data.studentAssignments ?? [];
 	let source: EventSource | null = null;
 
+	function getEditorTarget() {
+		return assignment?.type === 'code' ? 'code_editor' : 'RTE';
+	}
+
 	onMount(() => {
 		if (!isInstructorView) return;
 
@@ -36,8 +40,27 @@
 		source?.close();
 	});
 
-	function openInNewTab(url: string) {
-		window.open(url, '_blank', 'noopener,noreferrer');
+	async function openEditor(params: Record<string, string> = {}) {
+		const response = await fetch('/api/editor-entry', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({ target: getEditorTarget(), params })
+		});
+
+		if (!response.ok) {
+			console.error('Failed to create editor entry token');
+			return;
+		}
+
+		const payload = (await response.json()) as { url?: string };
+		if (!payload.url) {
+			console.error('Editor entry URL missing in response');
+			return;
+		}
+
+		window.open(payload.url, '_blank', 'noopener,noreferrer');
 	}
 </script>
 
@@ -49,7 +72,7 @@
 	<section class="assignment-card">
 		<h1>{assignment?.title}</h1>
 		<p>{assignment?.description}</p>
-		<button class="open-btn" onclick={() => openInNewTab(`/RTE?`)}>
+		<button class="open-btn" onclick={() => openEditor({ id: String(assignment?.id) })}>
 			Open Assignment
 		</button>
 	</section>
@@ -63,7 +86,9 @@
 						<strong>{submission.user?.name || submission.user?.email || submission.userId}</strong>
 						<span class="status-badge">{submission.status}</span>
 					</div>
-					<button class="open-btn" onclick={() => openInNewTab(`/RTE?id=${submission.id}`)}
+					<button
+						class="open-btn"
+						onclick={() => openEditor({ id: String(submission.id) })}
 						>Open Submission</button
 					>
 				</li>

@@ -1,23 +1,51 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	export let action = '?/createAssignment';
+
+	let assignmentType = 'essay';
 
 	let tempAssignment = {
 		title: '',
 		description: '',
-		content: ''
+		essayContent: '',
+		codeContent: ''
 	};
 
 	let templateWindow: Window | null = null;
 	let templateId = '';
 
+	$: selectedTemplateContent =
+		assignmentType === 'code' ? tempAssignment.codeContent : tempAssignment.essayContent;
+
 	function generateTemplateId() {
 		return `template_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 	}
 
-	function openTemplateEditor() {
+	async function openTemplateEditor() {
 		templateId = generateTemplateId();
-		templateWindow = window.open(`/RTE?mode=template&templateId=${templateId}`, 'rte_template');
+
+		const response = await fetch('/api/editor-entry', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({
+				target: 'RTE',
+				params: { mode: 'template', templateId }
+			})
+		});
+
+		if (!response.ok) {
+			console.error('Failed to create template editor entry token');
+			return;
+		}
+
+		const payload = (await response.json()) as { url?: string };
+		if (!payload.url) {
+			console.error('Template editor entry URL missing in response');
+			return;
+		}
+
+		templateWindow = window.open(payload.url, 'rte_template');
 
 		const checkTemplate = setInterval(() => {
 			const stored = localStorage.getItem(templateId);
@@ -26,7 +54,53 @@
 			}
 
 			const templateData = JSON.parse(stored) as { content: string };
-			tempAssignment.content = templateData.content;
+			tempAssignment.essayContent = templateData.content;
+			localStorage.removeItem(templateId);
+			clearInterval(checkTemplate);
+
+			if (templateWindow && !templateWindow.closed) {
+				templateWindow.close();
+			}
+
+			templateWindow = null;
+		}, 500);
+	}
+
+	async function openCodeTemplateEditor() {
+		templateId = generateTemplateId();
+
+		const response = await fetch('/api/editor-entry', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({
+				target: 'code_editor',
+				params: { mode: 'template', templateId }
+			})
+		});
+
+		if (!response.ok) {
+			console.error('Failed to create code template editor entry token');
+			return;
+		}
+
+		const payload = (await response.json()) as { url?: string };
+		if (!payload.url) {
+			console.error('Code template editor entry URL missing in response');
+			return;
+		}
+
+		templateWindow = window.open(payload.url, 'code_template');
+
+		const checkTemplate = setInterval(() => {
+			const stored = localStorage.getItem(templateId);
+			if (!stored) {
+				return;
+			}
+
+			const templateData = JSON.parse(stored) as { content: string };
+			tempAssignment.codeContent = templateData.content;
 			localStorage.removeItem(templateId);
 			clearInterval(checkTemplate);
 
@@ -58,13 +132,27 @@
 			bind:value={tempAssignment.description}
 			required
 		/>
-		<label for="content">Assignment Template:</label>
-		<button type="button" on:click={openTemplateEditor}>Create Template</button>
-		{#if tempAssignment.content}
-			<p class="template-status">Template created</p>
+		<label for="type">Assignment Type:</label>
+		<select name="type" id="type" bind:value={assignmentType}>
+			<option value="code">Code Assignment</option>
+			<option value="essay">Essay Assignment</option>
+		</select>
+
+		{#if assignmentType === 'essay'}
+			<label for="content">Assignment Template:</label>
+			<button type="button" on:click={openTemplateEditor}>Create Template</button>
+			{#if tempAssignment.essayContent}
+				<p class="template-status">Template created</p>
+			{/if}
+		{:else}
+			<label for="content">Code Template:</label>
+			<button type="button" on:click={openCodeTemplateEditor}>Create Code Template</button>
+			{#if tempAssignment.codeContent}
+				<p class="template-status">Code template created</p>
+			{/if}
 		{/if}
-		<input type="hidden" name="content" value={tempAssignment.content} />
-		<button type="submit" disabled={!tempAssignment.content}>Create Assignment</button>
+		<input type="hidden" name="content" value={selectedTemplateContent} />
+		<button type="submit" disabled={!selectedTemplateContent}>Create Assignment</button>
 	</form>
 </div>
 

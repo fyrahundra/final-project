@@ -23,9 +23,10 @@ export const actions: Actions = {
 		const title = formData.get('title') as string;
 		const description = formData.get('description') as string;
 		const content = formData.get('content') as string;
+		const type = formData.get('type') as string;
 
-		if (!title || !description || !content) {
-			throw new Error('Title, description, and content are required');
+		if (!title || !description || !content || !type) {
+			throw new Error('Title, description, content, and type are required');
 		}
 
 		await db
@@ -35,6 +36,7 @@ export const actions: Actions = {
 				title,
 				description,
 				content,
+				type,
 				courseId: courseId.toString(),
 				createdAt: new Date(),
 				updatedAt: new Date()
