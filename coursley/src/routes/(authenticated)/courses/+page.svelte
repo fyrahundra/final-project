@@ -83,7 +83,7 @@
 			<p class="text-gray-600 mb-4">
 				Create your own course and start teaching. Contact an admin to upgrade your account.
 			</p>
-			<button>
+			<button type="button" class="px-6 py-2 bg-gray-400 text-white rounded-lg">
 				<p>Request Instructor Access</p>
 			</button>
 		</div>
