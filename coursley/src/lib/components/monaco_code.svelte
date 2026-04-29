@@ -6,6 +6,8 @@
 	type AppTheme = 'light' | 'dark';
 
 	export let data;
+	export let initialCode = "print('Hello, World!')\n";
+	export let readOnly = false;
 
 	let monacoModule: typeof monacoEditor | undefined;
 	let currentTheme: AppTheme = data?.user?.theme === 'dark' ? 'dark' : 'light';
@@ -93,7 +95,7 @@
 			}
 
 			editor = monaco.editor.create(editorElement, {
-				value: "print('Hello, World!')\n",
+				value: initialCode,
 				language: 'python',
 				theme: toMonacoTheme(currentTheme),
 				automaticLayout: true,
@@ -101,7 +103,8 @@
 				scrollBeyondLastLine: false,
 				fontFamily: 'Courier New, monospace',
 				fontSize: 14,
-				wordWrap: 'off'
+				wordWrap: 'off',
+				readOnly
 			});
 		};
 

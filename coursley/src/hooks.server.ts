@@ -1,5 +1,22 @@
 import { validateSession } from '$lib/server/auth';
+import { pruneEntryTokens } from '$lib/server/entry-token';
+import { pruneVerificationTokens } from '$lib/server/verification-token';
 import type { Handle } from '@sveltejs/kit';
+
+declare global {
+	// eslint-disable-next-line no-var
+	var __entryTokenPruneInterval: ReturnType<typeof setInterval> | undefined;
+}
+
+if (!globalThis.__entryTokenPruneInterval) {
+	void pruneEntryTokens();
+	void pruneVerificationTokens();
+	globalThis.__entryTokenPruneInterval = setInterval(() => {
+		void pruneEntryTokens();
+		void pruneVerificationTokens();
+	}, 60_000);
+	globalThis.__entryTokenPruneInterval.unref?.();
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const sessionToken = event.cookies.get('session_token');

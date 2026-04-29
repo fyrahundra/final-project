@@ -9,8 +9,13 @@ function createGrantCookieName(target: EditorTarget, targetId: string | null) {
     return `${EDITOR_ACCESS_COOKIE_PREFIX}_${target}_${encodedTargetId}`;
 }
 
-function createGrantValue(userId: string, target: EditorTarget, targetId: string | null) {
-    return `${userId}:${target}:${targetId ?? ''}`;
+function createGrantValue(
+    userId: string,
+    target: EditorTarget,
+    targetId: string | null,
+    entryToken: string
+) {
+    return `${userId}:${target}:${targetId ?? ''}:${entryToken}`;
 }
 
 export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
@@ -29,14 +34,16 @@ export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
     const targetId =
         url.searchParams.get('id')?.trim() || url.searchParams.get('templateId')?.trim() || null;
     const grantCookieName = createGrantCookieName(target, targetId);
-    const expectedGrant = createGrantValue(locals.user.id, target, targetId);
+    const entryToken = url.searchParams.get('entry')?.trim();
     const existingGrant = cookies.get(grantCookieName);
 
-    if (existingGrant !== expectedGrant) {
-        const entryToken = url.searchParams.get('entry')?.trim();
-        if (!entryToken) {
+		if (!entryToken) {
             throw redirect(302, '/courses');
         }
+
+	const expectedGrant = createGrantValue(locals.user.id, target, targetId, entryToken);
+
+	if (existingGrant !== expectedGrant) {
 
         const isValid = await consumeEntryToken({
             token: entryToken,

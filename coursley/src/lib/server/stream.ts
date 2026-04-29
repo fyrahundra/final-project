@@ -17,16 +17,36 @@ type AssignmentSubmittedPayload = {
 	status: string;
 };
 
+type AssignmentCreatedPayload = {
+	userId: string;
+	courseId: string;
+	assignment: {
+		id: string;
+		title: string;
+		description: string | null;
+		type: string;
+		content: string;
+		contentTitle: string | null;
+		courseId: string;
+		dueDate: Date | null;
+		createdAt: Date;
+		updatedAt: Date;
+	};
+};
+
 type ThemeListener = (payload: ThemePayload) => void;
 type ProfilePictureListener = (payload: ProfilePicturePayload) => void;
 type AssignmentSubmittedListener = (payload: AssignmentSubmittedPayload) => void;
+type AssignmentCreatedListener = (payload: AssignmentCreatedPayload) => void;
 
 const THEME_CHANNEL = 'theme:changed';
 const PROFILE_PICTURE_CHANNEL = 'profile-picture:changed';
 const ASSIGNMENT_SUBMITTED_CHANNEL = 'assignment:submitted';
+const ASSIGNMENT_CREATED_CHANNEL = 'assignment:created';
 const localListeners = new Map<string, Set<ThemeListener>>();
 const localProfilePictureListeners = new Map<string, Set<ProfilePictureListener>>();
 const localAssignmentSubmittedListeners = new Map<string, Set<AssignmentSubmittedListener>>();
+const localAssignmentCreatedListeners = new Map<string, Set<AssignmentCreatedListener>>();
 
 let redisReady = false;
 let redisInitStarted = false;
@@ -50,6 +70,14 @@ function notifyLocalProfilePicture(payload: ProfilePicturePayload) {
 
 function notifyLocalAssignmentSubmitted(payload: AssignmentSubmittedPayload) {
 	const listeners = localAssignmentSubmittedListeners.get(payload.userId);
+	if (!listeners) return;
+	for (const listener of listeners) {
+		listener(payload);
+	}
+}
+
+function notifyLocalAssignmentCreated(payload: AssignmentCreatedPayload) {
+	const listeners = localAssignmentCreatedListeners.get(payload.userId);
 	if (!listeners) return;
 	for (const listener of listeners) {
 		listener(payload);
@@ -101,6 +129,15 @@ async function initRedis() {
 				notifyLocalAssignmentSubmitted(payload);
 			} catch (error) {
 				console.error('Failed to parse assignment submitted event:', error);
+			}
+		});
+
+		await subscriber.subscribe(ASSIGNMENT_CREATED_CHANNEL, (message) => {
+			try {
+				const payload = JSON.parse(message) as AssignmentCreatedPayload;
+				notifyLocalAssignmentCreated(payload);
+			} catch (error) {
+				console.error('Failed to parse assignment created event:', error);
 			}
 		});
 
@@ -165,6 +202,27 @@ export function subscribeToAssignmentSubmitted(
 	};
 }
 
+export function subscribeToAssignmentCreated(
+	userId: string,
+	listener: AssignmentCreatedListener
+) {
+	void initRedis();
+
+	const listeners =
+		localAssignmentCreatedListeners.get(userId) ?? new Set<AssignmentCreatedListener>();
+	listeners.add(listener);
+	localAssignmentCreatedListeners.set(userId, listeners);
+
+	return () => {
+		const userListeners = localAssignmentCreatedListeners.get(userId);
+		if (!userListeners) return;
+		userListeners.delete(listener);
+		if (userListeners.size === 0) {
+			localAssignmentCreatedListeners.delete(userId);
+		}
+	};
+}
+
 export async function publishThemeChanged(payload: ThemePayload) {
 	notifyLocal(payload);
 	await initRedis();
@@ -196,4 +254,15 @@ export async function publishAssignmentSubmitted(payload: AssignmentSubmittedPay
 	}
 
 	await redisPublisher.publish(ASSIGNMENT_SUBMITTED_CHANNEL, JSON.stringify(payload));
+}
+
+export async function publishAssignmentCreated(payload: AssignmentCreatedPayload) {
+	notifyLocalAssignmentCreated(payload);
+	await initRedis();
+
+	if (!redisReady || !redisPublisher) {
+		return;
+	}
+
+	await redisPublisher.publish(ASSIGNMENT_CREATED_CHANNEL, JSON.stringify(payload));
 }

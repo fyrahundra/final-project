@@ -1,15 +1,24 @@
 <script lang="ts">
 	import MonacoCode from '$lib/components/monaco_code.svelte';
+	import { enhance } from '$app/forms';
 
 	let output = '';
 	let plots: string[] = [];
 	let running = false;
+	let saveMessage = '';
+	let saveMessageTimer: ReturnType<typeof setTimeout> | undefined;
+	let saveForm: HTMLFormElement;
 	let monacoComponent: MonacoCode;
+	let turnedIn = false;
 
 	export let data;
 
 	const isTemplate = Boolean(data?.isTemplate);
+	const isViewOnly = Boolean(data?.isViewOnly);
 	const templateId = String(data?.templateId ?? '');
+	const documentId = String(data?.documentId ?? '');
+	const defaultCode = "print('Hello, World!')\n";
+	const initialCode = String(data?.content ?? defaultCode);
 
 	function saveTemplate() {
 		if (!isTemplate || !templateId) {
@@ -21,8 +30,62 @@
 		window.close();
 	}
 
-	function saveCode(){
-		const code = monacoComponent.getCode();
+	function saveCode() {
+		if (isViewOnly) {
+			return;
+		}
+
+		saveMessage = '';
+		saveForm?.requestSubmit();
+	}
+
+	function handleSave({ formData }: { formData: FormData }) {
+		formData.set('id', documentId);
+		formData.set('content', monacoComponent.getCode());
+
+		if (saveMessageTimer) {
+			clearTimeout(saveMessageTimer);
+		}
+
+		const clearSaveMessage = () => {
+			saveMessageTimer = setTimeout(() => {
+				saveMessage = '';
+			}, 2000);
+		};
+
+		return async ({ result }: { result: { type: string; data?: { success?: boolean; error?: string } } }) => {
+			if (result.type === 'success' && result.data?.success) {
+				saveMessage = 'Saved to database.';
+				clearSaveMessage();
+				return;
+			}
+
+			saveMessage = result.type === 'success'
+				? result.data?.error ?? 'Save failed.'
+				: 'Save failed.';
+			clearSaveMessage();
+		};
+	}
+
+	function handleTurnIn({ formData }: { formData: FormData }) {
+		formData.set('id', documentId);
+
+		if (saveMessageTimer) clearTimeout(saveMessageTimer);
+		const clearSaveMessage = () => {
+			saveMessageTimer = setTimeout(() => (saveMessage = ''), 2000);
+		};
+
+		return async ({ result }: { result: { type: string; data?: any } }) => {
+			if (result.type === 'success' && result.data?.success) {
+				saveMessage = 'Turned in.';
+				turnedIn = true;
+				clearSaveMessage();
+				return;
+			}
+
+			saveMessage = result.type === 'success' ? result.data?.error ?? 'Turn in failed.' : 'Turn in failed.';
+			clearSaveMessage();
+		};
 	}
 
 	async function runCode() {
@@ -63,19 +126,48 @@
 			<div class="panel editor-panel">
 				<div class="panel-header">
 					<h3 class="panel-title">Code</h3>
+					{#if saveMessage}
+							<p class="save-status">{saveMessage}</p>
+					{/if}
+					{#if isTemplate}
+						<p class="view-only-badge">Template Mode</p>
+					{:else if isViewOnly}
+						<p class="view-only-badge">View Only</p>
+					{/if}
 				</div>
 				<div class="editor-wrapper">
-					<MonacoCode bind:this={monacoComponent} {data} />
+					<MonacoCode bind:this={monacoComponent} {data} {initialCode} readOnly={isViewOnly} />
 				</div>
 				<div class="panel-footer">
 					{#if isTemplate}
 						<button class="save-button" on:click={saveTemplate}>Save Template</button>
+					{:else if !isViewOnly}
+						{#if !turnedIn}
+							<button class="save-button" on:click={saveCode}>Save</button>
+							<form method="POST" action="?/turnIn" class="turnin-form" use:enhance={handleTurnIn}>
+								<input type="hidden" name="id" value={documentId} />
+								<button class="save-button turnin-button" type="submit">Turn In</button>
+							</form>
+						{:else}
+							<p class="save-status">Submission turned in.</p>
+						{/if}
+					{:else}
+						<div class="view-only-spacer"></div>
 					{/if}
-					<button class="save-button" on:click={saveCode}>Save</button>
 					<button class="run-button" on:click={runCode} disabled={running}>
 						{running ? 'Running...' : '▶ Run Code'}
 					</button>
 				</div>
+				<form
+					bind:this={saveForm}
+					class="save-form"
+					method="POST"
+					action="?/saveDocument"
+					use:enhance={handleSave}
+				>
+					<input type="hidden" name="id" value={documentId} />
+					<input type="hidden" name="content" value={initialCode} />
+				</form>
 			</div>
 
 			<div class="panel output-panel">
@@ -101,32 +193,36 @@
 
 <style>
 	main {
-		width: 100%;
+		width: 100vw;
 		height: 100vh;
 		padding: 0;
 		margin: 0;
-		background:
-			radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.9) 0 9%, transparent 26%),
-			linear-gradient(180deg, #eef3fb 0%, #edf0f5 40%, #e9edf2 100%);
 		overflow: hidden;
 		box-sizing: border-box;
 	}
 
 	.page-container {
-		width: 100%;
-		height: 100%;
+		width: 100vw;
+		height: 100vh;
 		display: flex;
 		flex-direction: column;
 		padding: 1.5rem;
 		box-sizing: border-box;
 	}
-
 	.page-title {
 		font-size: 1.75rem;
 		font-weight: 600;
 		margin: 0 0 1.5rem 0;
 		height: auto;
-		color: var(--text-color, #333);
+		color: var(--text-color);
+		flex-shrink: 0;
+	}
+	.page-title {
+		font-size: 1.75rem;
+		font-weight: 600;
+		margin: 0 0 1.5rem 0;
+		height: auto;
+		color: var(--text-color);
 		flex-shrink: 0;
 	}
 
@@ -156,6 +252,10 @@
 		border-bottom: 1px solid #e0e0e0;
 		background: var(--secondary-background-color, #f5f5f5);
 		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
 	}
 
 	.panel-title {
@@ -190,11 +290,16 @@
 		display: flex;
 		gap: 0.5rem;
 		flex-shrink: 0;
+		align-items: center; /* ensure buttons align vertically */
 	}
 
 	.run-button {
 		flex: 1;
-		padding: 0.75rem 1.5rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 40px;
+		padding: 0 1.5rem;
 		background: var(--primary-color, #4a90e2);
 		color: white;
 		border: none;
@@ -216,7 +321,11 @@
 	}
 
 	.save-button {
-		padding: 0.75rem 1rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 40px;
+		padding: 0 1rem;
 		background: #15803d;
 		color: white;
 		border: none;
@@ -229,6 +338,45 @@
 
 	.save-button:hover {
 		background: #166534;
+	}
+
+	.turnin-form {
+		margin-left: 0.5rem;
+		display: inline-block;
+	}
+
+	.turnin-button {
+		background: #f59e0b; /* amber/yellow */
+		color: white;
+	}
+
+	.turnin-button:hover {
+		background: #d97706;
+	}
+
+	.save-status {
+		margin: 0;
+		color: #909baa;
+		font-size: 0.85rem;
+	}
+
+	.view-only-badge {
+		margin: 0;
+		padding: 0.35rem 0.65rem;
+		border-radius: 999px;
+		background: #e5e7eb;
+		color: #374151;
+		font-size: 0.8rem;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.view-only-spacer {
+		flex: 1;
+	}
+
+	.save-form {
+		display: none;
 	}
 
 	.output-panel {

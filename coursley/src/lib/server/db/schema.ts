@@ -73,6 +73,19 @@ export const entryTokenTable = pgTable('entry_token', {
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+// Verification Token table (for email verification, password reset, etc.)
+export const verificationTokenTable = pgTable('verification_token', {
+	id: text('id').primaryKey(),
+	token: text('token').notNull().unique(),
+	userId: text('user_id')
+		.references(() => userTable.id, { onDelete: 'cascade' })
+		.notNull(),
+	type: text('type').notNull(), // 'email_verification', 'password_reset', etc.
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	usedAt: timestamp('used_at', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 // Enrollment table (junction table for students and courses)
 export const enrollmentTable = pgTable('enrollment', {
 	id: text('id').primaryKey(),
@@ -108,7 +121,8 @@ export const userReltions = relations(userTable, ({ many }) => ({
 	instructorCourses: many(courseTable),
 	sessions: many(sessionTable),
 	enrollments: many(enrollmentTable),
-	userAssignments: many(userAssignmentTable)
+	userAssignments: many(userAssignmentTable),
+	verificationTokens: many(verificationTokenTable)
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -154,5 +168,12 @@ export const userAssignmentRelations = relations(userAssignmentTable, ({ one }) 
 	assignment: one(assignmentTable, {
 		fields: [userAssignmentTable.assignmentId],
 		references: [assignmentTable.id]
+	})
+}));
+
+export const verificationTokenRelations = relations(verificationTokenTable, ({ one }) => ({
+	user: one(userTable, {
+		fields: [verificationTokenTable.userId],
+		references: [userTable.id]
 	})
 }));

@@ -1,9 +1,34 @@
 <script lang="ts">
 	import AssignmentCreate from '$lib/components/assignment_create.svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	export let data;
 
 	let showCreateAssignment = false;
+	let assignments = data.assignments ?? [];
+	type AssignmentItem = (typeof assignments)[number];
+	let source: EventSource | null = null;
+
+	onMount(() => {
+		source = new EventSource('/streams');
+
+		source.addEventListener('assignment_created', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as {
+				courseId: string;
+				assignment: AssignmentItem;
+			};
+
+			if (payload.courseId !== String(data.course?.id)) return;
+			if (assignments.some((assignment) => assignment.id === payload.assignment.id)) return;
+
+			assignments = [...assignments, payload.assignment];
+		});
+	});
+
+	onDestroy(() => {
+		source?.close();
+	});
 </script>
 
 <h1>{data.course?.title}</h1>
@@ -19,11 +44,11 @@
 </div>
 
 <h2>Assignments</h2>
-{#if data.assignments?.length === 0}
+{#if assignments?.length === 0}
 	<p class="empty-state">No assignments yet.</p>
 {:else}
 	<ul class="assignment-list">
-		{#each data.assignments as assignment}
+		{#each assignments as assignment}
 			<li class="assignment-card">
 				<a class="assignment-link" href={`/courses/${data.course?.id}/assignments/${assignment.id}`}
 					>{assignment.title}</a

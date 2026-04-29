@@ -88,7 +88,7 @@
 					</div>
 					<button
 						class="open-btn"
-						onclick={() => openEditor({ id: String(submission.id) })}
+						onclick={() => openEditor({ id: String(submission.id), view: 'only' })}
 						>Open Submission</button
 					>
 				</li>

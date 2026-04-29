@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'crypto';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { entryTokenTable } from '$lib/server/db/schema';
 
@@ -18,12 +18,22 @@ function createTokenValue() {
 	return randomBytes(32).toString('hex');
 }
 
+export async function pruneEntryTokens() {
+	await db.execute(sql`
+		DELETE FROM entry_token
+		WHERE used_at IS NOT NULL
+		   OR expires_at <= CURRENT_TIMESTAMP
+	`);
+}
+
 export async function issueEntryToken(input: {
 	userId: string;
 	target: EditorTarget;
 	targetId?: string | null;
 	ttlSeconds?: number;
 }) {
+	await pruneEntryTokens();
+
 	const ttlSeconds = input.ttlSeconds ?? ENTRY_TOKEN_TTL_SECONDS;
 	const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 	const token = createTokenValue();
@@ -41,39 +51,32 @@ export async function issueEntryToken(input: {
 }
 
 export async function consumeEntryToken(input: ConsumeEntryTokenInput) {
-	const record = await db.query.entryTokenTable.findFirst({
-		where: (entryToken, { eq }) => eq(entryToken.token, input.token)
-	});
+	const targetId = input.targetId;
+	const baseConditions = [
+		eq(entryTokenTable.token, input.token),
+		eq(entryTokenTable.userId, input.userId),
+		eq(entryTokenTable.target, input.target),
+		isNull(entryTokenTable.usedAt),
+		sql`${entryTokenTable.expiresAt} > CURRENT_TIMESTAMP`
+	];
 
-	if (!record) {
-		return false;
+	let consumed;
+
+	if (targetId == null) {
+		consumed = await db
+			.delete(entryTokenTable)
+			.where(and(...baseConditions, isNull(entryTokenTable.targetId)))
+			.returning({ id: entryTokenTable.id });
+	} else {
+		consumed = await db
+			.delete(entryTokenTable)
+			.where(and(...baseConditions, eq(entryTokenTable.targetId, targetId)))
+			.returning({ id: entryTokenTable.id });
 	}
 
-	if (record.userId !== input.userId) {
-		return false;
+	if (consumed.length > 0) {
+		await pruneEntryTokens();
 	}
-
-	if (record.target !== input.target) {
-		return false;
-	}
-
-	if ((record.targetId ?? null) !== (input.targetId ?? null)) {
-		return false;
-	}
-
-	if (record.usedAt) {
-		return false;
-	}
-
-	if (record.expiresAt <= new Date()) {
-		return false;
-	}
-
-	const consumed = await db
-		.update(entryTokenTable)
-		.set({ usedAt: new Date() })
-		.where(and(eq(entryTokenTable.id, record.id), isNull(entryTokenTable.usedAt)))
-		.returning({ id: entryTokenTable.id });
 
 	return consumed.length > 0;
 }

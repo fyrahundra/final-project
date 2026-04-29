@@ -1,5 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import {
+	subscribeToAssignmentCreated,
 	subscribeToAssignmentSubmitted,
 	subscribeToProfilePicture,
 	subscribeToTheme
@@ -28,6 +29,7 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 	let unsubscribeTheme: (() => void) | undefined;
 	let unsubscribeProfilePicture: (() => void) | undefined;
 	let unsubscribeAssignmentSubmitted: (() => void) | undefined;
+	let unsubscribeAssignmentCreated: (() => void) | undefined;
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
@@ -53,6 +55,26 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				if (isClosed) return;
 				const data = JSON.stringify(payload);
 				controller.enqueue(encoder.encode(`event: assignment_submitted\ndata: ${data}\n\n`));
+			};
+
+			const sendAssignmentCreated = (payload: {
+				courseId: string;
+				assignment: {
+					id: string;
+					title: string;
+					description: string | null;
+					type: string;
+					content: string;
+					contentTitle: string | null;
+					courseId: string;
+					dueDate: Date | null;
+					createdAt: Date;
+					updatedAt: Date;
+				};
+			}) => {
+				if (isClosed) return;
+				const data = JSON.stringify(payload);
+				controller.enqueue(encoder.encode(`event: assignment_created\ndata: ${data}\n\n`));
 			};
 
 			const sendAutosaveTick = () => {
@@ -88,6 +110,10 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 					unsubscribeAssignmentSubmitted();
 					unsubscribeAssignmentSubmitted = undefined;
 				}
+				if (unsubscribeAssignmentCreated) {
+					unsubscribeAssignmentCreated();
+					unsubscribeAssignmentCreated = undefined;
+				}
 			};
 
 			request.signal.addEventListener('abort', cleanup);
@@ -109,6 +135,13 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				userId,
 				({ assignmentId, userAssignmentId, status }) => {
 					sendAssignmentSubmitted({ assignmentId, userAssignmentId, status });
+				}
+			);
+
+			unsubscribeAssignmentCreated = subscribeToAssignmentCreated(
+				userId,
+				({ courseId, assignment }) => {
+					sendAssignmentCreated({ courseId, assignment });
 				}
 			);
 
@@ -136,6 +169,9 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			}
 			if (unsubscribeAssignmentSubmitted) {
 				unsubscribeAssignmentSubmitted();
+			}
+			if (unsubscribeAssignmentCreated) {
+				unsubscribeAssignmentCreated();
 			}
 		}
 	});

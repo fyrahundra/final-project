@@ -50,40 +50,52 @@
 
 <div class="container mx-auto p-6">
 	<h1 class="text-3xl font-bold mb-8">My Courses</h1>
+	<div class="actions-row">
+		<!-- Join Course Section -->
+		<div class="bg-white rounded-lg shadow-md p-6">
+			<h2 class="text-xl font-semibold mb-4">Join a Course</h2>
+			<p class="text-gray-600 mb-4">
+				Enter the course ID provided by your instructor to join a course.
+			</p>
 
-	<!-- Join Course Section -->
-	<div class="bg-white rounded-lg shadow-md p-6 mb-8">
-		<h2 class="text-xl font-semibold mb-4">Join a Course</h2>
-		<p class="text-gray-600 mb-4">
-			Enter the course ID provided by your instructor to join a course.
-		</p>
-
-		<div class="flex gap-2 mb-4">
-			<input
-				type="text"
-				placeholder="Enter course ID"
-				bind:value={joinId}
-				disabled={loading}
-				class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-			/>
-			<button
-				type="button"
-				on:click={handleJoinCourse}
-				disabled={loading}
-				class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-			>
-				{loading ? 'Joining...' : 'Join Course'}
-			</button>
+			<div class="flex gap-2 mb-4">
+				<input
+					type="text"
+					placeholder="Enter course ID"
+					bind:value={joinId}
+					disabled={loading}
+					class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+				<button
+					type="button"
+					on:click={handleJoinCourse}
+					disabled={loading}
+					class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+				>
+					{loading ? 'Joining...' : 'Join Course'}
+				</button>
+			</div>
 		</div>
 
-		{#if message}
-			<div
-				class={`p-3 rounded-lg ${messageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-			>
-				{message}
-			</div>
-		{/if}
+		<!-- Become Instructor Section -->
+		<div class="bg-white rounded-lg shadow-md p-6">
+			<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
+			<p class="text-gray-600 mb-4">
+				Create your own course and start teaching. Contact an admin to upgrade your account.
+			</p>
+			<button>
+				<p>Request Instructor Access</p>
+			</button>
+		</div>
 	</div>
+
+	{#if message}
+		<div
+			class={`p-3 rounded-lg mt-4 ${messageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+		>
+			{message}
+		</div>
+	{/if}
 
 	<br />
 
@@ -115,6 +127,17 @@
 <style>
 	:global(body) {
 		background-color: #f5f5f5;
+	}
+
+	.actions-row {
+		display: flex;
+		flex-direction: row;
+		gap: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.actions-row > div {
+		flex: 1;
 	}
 
 	.courses-section {

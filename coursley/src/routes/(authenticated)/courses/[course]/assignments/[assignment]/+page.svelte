@@ -75,7 +75,7 @@
 				<button
 					class="open-btn"
 					onclick={() =>
-						openEditor({ id: String(userAssignment?.id ?? '') })}
+						openEditor({ id: String(userAssignment?.id ?? ''), view: 'only' })}
 					>View Submission</button
 				>
 				<form action="?/takeBack" method="post">

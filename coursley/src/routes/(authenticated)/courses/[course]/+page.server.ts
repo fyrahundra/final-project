@@ -2,8 +2,10 @@ import type { Actions } from '@sveltejs/kit';
 import { getCourse } from '$lib/server/db/query';
 import { db } from '$lib/server/db';
 import { redirect } from '@sveltejs/kit';
-import { assignmentTable } from '$lib/server/db/schema';
+import { assignmentTable, enrollmentTable } from '$lib/server/db/schema';
 import { randomUUID } from 'crypto';
+import { publishAssignmentCreated } from '$lib/server/stream';
+import { eq } from 'drizzle-orm';
 
 export const actions: Actions = {
 	createAssignment: async ({ request, params, locals }) => {
@@ -29,10 +31,12 @@ export const actions: Actions = {
 			throw new Error('Title, description, content, and type are required');
 		}
 
+		const assignmentId = randomUUID();
+
 		await db
 			.insert(assignmentTable)
 			.values({
-				id: randomUUID(),
+				id: assignmentId,
 				title,
 				description,
 				content,
@@ -42,5 +46,41 @@ export const actions: Actions = {
 				updatedAt: new Date()
 			})
 			.execute();
+
+		const enrollments = await db
+			.select({ studentId: enrollmentTable.studentId })
+			.from(enrollmentTable)
+			.where(eq(enrollmentTable.courseId, courseId.toString()))
+			.execute();
+
+		const createdAt = new Date();
+		const updatedAt = createdAt;
+		const assignmentPayload = {
+			id: assignmentId,
+			title,
+			description,
+			type,
+			content,
+			contentTitle: null,
+			courseId: courseId.toString(),
+			dueDate: null,
+			createdAt,
+			updatedAt
+		};
+
+		const recipientUserIds = new Set<string>([user.id]);
+		for (const enrollment of enrollments) {
+			recipientUserIds.add(enrollment.studentId);
+		}
+
+		await Promise.all(
+			Array.from(recipientUserIds).map((recipientUserId) =>
+				publishAssignmentCreated({
+					userId: recipientUserId,
+					courseId: courseId.toString(),
+					assignment: assignmentPayload
+				})
+			)
+		);
 	}
 };
