@@ -38,7 +38,7 @@ services:
     healthCheckPath: /
     envVars:
       - key: RUN_TIMEOUT_SECONDS
-        value: "5"
+        value: "20"
       - key: WORKER_CONCURRENCY
         value: "4"
       - key: MAX_QUEUE_LENGTH

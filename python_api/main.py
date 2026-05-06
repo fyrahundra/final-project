@@ -27,7 +27,7 @@ class CodeRequest(BaseModel):
     code: str
 
 
-RUN_TIMEOUT_SECONDS = int(os.getenv("RUN_TIMEOUT_SECONDS", "5"))
+RUN_TIMEOUT_SECONDS = int(os.getenv("RUN_TIMEOUT_SECONDS", "20"))
 WORKER_CONCURRENCY = int(os.getenv("WORKER_CONCURRENCY", "4"))
 MAX_QUEUE_LENGTH = int(os.getenv("MAX_QUEUE_LENGTH", "16"))
 STDOUT_LIMIT = int(os.getenv("STDOUT_LIMIT", "8192"))
