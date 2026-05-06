@@ -11,6 +11,14 @@ type RunnerResult = {
 	exit_code?: number;
 };
 
+function parseRunnerJson(rawBody: string): RunnerResult | null {
+	try {
+		return JSON.parse(rawBody) as RunnerResult;
+	} catch {
+		return null;
+	}
+}
+
 function resolveRunnerUrl() {
 	if (!env.PYTHON_RUN_API_URL) {
 		if (dev) {
@@ -44,11 +52,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 
 		const rawBody = await response.text();
-		let body: RunnerResult;
-		try {
-			body = JSON.parse(rawBody) as RunnerResult;
-		} catch {
-			return json({ error: 'Invalid response from code runner' }, { status: 502 });
+		const body = parseRunnerJson(rawBody);
+
+		if (!body) {
+			const upstreamContentType = response.headers.get('content-type') ?? 'unknown';
+			const upstreamBodyPreview = rawBody.slice(0, 500);
+
+			return json(
+				{
+					error: 'Invalid response from code runner',
+					upstream_status: response.status,
+					upstream_content_type: upstreamContentType,
+					upstream_body_preview: upstreamBodyPreview
+				},
+				{ status: 502 }
+			);
 		}
 
 		return json(body, { status: response.status });
