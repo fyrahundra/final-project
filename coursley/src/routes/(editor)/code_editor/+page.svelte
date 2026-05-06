@@ -95,7 +95,7 @@
 		try {
 			const code = monacoComponent.getCode();
 
-			const res = await fetch('http://localhost:8000/run', {
+			const res = await fetch('/api/run', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ code: code })
@@ -115,6 +115,10 @@
 		} finally {
 			running = false;
 		}
+	}
+
+	function resolvePlotSrc(plot: string) {
+		return plot.startsWith('data:') ? plot : `data:image/png;base64,${plot}`;
 	}
 </script>
 
@@ -178,7 +182,7 @@
 					<div class="plots-container">
 						{#if plots.length > 0}
 							{#each plots as plot}
-								<img src={plot} alt="Plot" class="plot-image" />
+								<img src={resolvePlotSrc(plot)} alt="Plot" class="plot-image" />
 							{/each}
 						{:else}
 							<p class="plots-empty">No plots yet. Run code that generates a plot.</p>

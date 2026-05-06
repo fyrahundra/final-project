@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: coursley-web
+    runtime: node
+    rootDir: coursley
+    plan: free
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: corepack enable && pnpm preview --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_RUN_API_URL
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coursley-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RTE_AUTOSAVE_INTERVAL_MS
+        value: "30000"
+
+  - type: web
+    name: coursley-python-api
+    runtime: docker
+    rootDir: python_api
+    plan: free
+    autoDeploy: true
+    dockerfilePath: ./dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: RUN_TIMEOUT_SECONDS
+        value: "5"
+      - key: WORKER_CONCURRENCY
+        value: "4"
+      - key: MAX_QUEUE_LENGTH
+        value: "16"
+      - key: STDOUT_LIMIT
+        value: "8192"
+      - key: STDERR_LIMIT
+        value: "8192"
+
+databases:
+  - name: coursley-db
+    databaseName: coursley
+    user: coursley
+    plan: free
