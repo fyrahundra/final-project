@@ -46,6 +46,16 @@
 					/>
 				</div>
 
+				<div class="form-group">
+					<label for="instructor">Instructor</label>
+					<input
+						type="checkbox"
+						id="instructor"
+						name="instructor"
+						autocomplete="off"
+					/>
+				</div>
+
 				<button type="submit" class="btn-primary">Create Account</button>
 			</form>
 
