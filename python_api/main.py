@@ -104,12 +104,25 @@ print({PLOT_CAPTURE_END!r})
         temp_file.flush()
         temp_file.close()
 
-        process = subprocess.run(
-            ["python", temp_file.name],
-            capture_output=True,
-            text=True,
-            timeout=RUN_TIMEOUT_SECONDS,
-        )
+        try:
+            process = subprocess.run(
+                ["python", temp_file.name],
+                capture_output=True,
+                text=True,
+                timeout=RUN_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout or ""
+            stderr = exc.stderr or ""
+            clean_stdout, plots = extract_plots(stdout)
+
+            return {
+                "stdout": truncate(clean_stdout, STDOUT_LIMIT),
+                "stderr": truncate(stderr or f"Execution timed out after {RUN_TIMEOUT_SECONDS} seconds.", STDERR_LIMIT),
+                "plots": plots,
+                "exit_code": 124,
+                "error": "request timeout",
+            }
     finally:
         try:
             temp_file.close()
