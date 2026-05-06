@@ -8,12 +8,19 @@ declare global {
 	var __entryTokenPruneInterval: ReturnType<typeof setInterval> | undefined;
 }
 
+function pruneTokensSafely() {
+	void pruneEntryTokens().catch(() => {
+		// Best effort: startup should not fail if DB is unavailable or not migrated yet.
+	});
+	void pruneVerificationTokens().catch(() => {
+		// Best effort: startup should not fail if DB is unavailable or not migrated yet.
+	});
+}
+
 if (!globalThis.__entryTokenPruneInterval) {
-	void pruneEntryTokens();
-	void pruneVerificationTokens();
+	pruneTokensSafely();
 	globalThis.__entryTokenPruneInterval = setInterval(() => {
-		void pruneEntryTokens();
-		void pruneVerificationTokens();
+		pruneTokensSafely();
 	}, 60_000);
 	globalThis.__entryTokenPruneInterval.unref?.();
 }
