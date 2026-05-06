@@ -20,7 +20,9 @@ function parseRunnerJson(rawBody: string): RunnerResult | null {
 }
 
 function resolveRunnerUrl() {
-	if (!env.PYTHON_RUN_API_URL) {
+	const configuredUrl = env.PYTHON_RUN_API_URL;
+
+	if (!configuredUrl) {
 		if (dev) {
 			return 'http://localhost:8000/run';
 		}
@@ -28,7 +30,16 @@ function resolveRunnerUrl() {
 		throw new Error('PYTHON_RUN_API_URL is not set');
 	}
 
-	return env.PYTHON_RUN_API_URL;
+	// Accept either a full endpoint (.../run) or a service base URL.
+	if (configuredUrl.endsWith('/run')) {
+		return configuredUrl;
+	}
+
+	if (configuredUrl.endsWith('/')) {
+		return `${configuredUrl}run`;
+	}
+
+	return `${configuredUrl}/run`;
 }
 
 export const POST: RequestHandler = async ({ request }) => {
