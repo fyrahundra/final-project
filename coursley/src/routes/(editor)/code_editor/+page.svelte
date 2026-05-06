@@ -89,7 +89,7 @@
 	}
 
 	async function runCode() {
-        plots = [];
+		plots = [];
 		running = true;
 		output = 'Running...';
 		try {
@@ -102,13 +102,54 @@
 			});
 
 			const data = await res.json();
-            console.log('Response from server:', data);
-			output = data.stdout || data.stderr || data.error || 'No output';
-            if (data.plots) {
-                console.log('Received plots:', data.plots);
-                plots = data.plots; // Assuming this is an array of base64-encoded images
-                console.log('Updated plots state:', plots);
-            }
+			console.log('Response from server:', data);
+
+			if (!res.ok) {
+				const lines: string[] = [data.error || `Run failed (${res.status})`];
+
+				if (data.upstream_status) {
+					lines.push(`upstream_status: ${data.upstream_status}`);
+				}
+
+				if (data.upstream_content_type) {
+					lines.push(`upstream_content_type: ${data.upstream_content_type}`);
+				}
+
+				if (data.upstream_body_preview) {
+					lines.push('upstream_body_preview:');
+					lines.push(data.upstream_body_preview);
+				}
+
+				output = lines.join('\n');
+				return;
+			}
+
+			const stdout = typeof data.stdout === 'string' ? data.stdout : '';
+			const stderr = typeof data.stderr === 'string' ? data.stderr : '';
+			const error = typeof data.error === 'string' ? data.error : '';
+			const exitCode = typeof data.exit_code === 'number' ? data.exit_code : undefined;
+
+			if (stdout.trim().length > 0) {
+				output = stdout;
+			} else if (stderr.trim().length > 0) {
+				output = stderr;
+			} else if (error.trim().length > 0) {
+				output = error;
+			} else if ((data.plots?.length ?? 0) > 0) {
+				output = `Generated ${data.plots.length} plot(s) with no text output.`;
+			} else if (exitCode === 0) {
+				output = 'Program finished successfully with no text output.';
+			} else if (typeof exitCode === 'number') {
+				output = `Program exited with code ${exitCode} and no text output.`;
+			} else {
+				output = 'No output';
+			}
+
+			if (data.plots) {
+				console.log('Received plots:', data.plots);
+				plots = data.plots;
+				console.log('Updated plots state:', plots);
+			}
 		} catch (err: any) {
 			console.error('Error:', err.message);
 			output = 'An error occurred while running the code.';
