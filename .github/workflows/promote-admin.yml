@@ -30,12 +30,10 @@ jobs:
         with:
           version: 8
 
-      - name: Install dependencies (coursley)
-        working-directory: coursley
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Promote or create admin user
-        working-directory: coursley
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
@@ -55,4 +53,4 @@ jobs:
             exit 1
           fi
 
-          node scripts/promote-admin.js --email="$EMAIL" --name="$NAME" ${PASS:+--password="$PASS"}
+          cd coursley && node scripts/promote-admin.js --email="$EMAIL" --name="$NAME" ${PASS:+--password="$PASS"}
