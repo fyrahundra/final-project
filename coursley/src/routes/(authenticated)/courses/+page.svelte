@@ -1,10 +1,14 @@
-<script>
+<script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { enhance } from '$app/forms';
 
 	let joinId = '';
 	let loading = false;
 	let message = '';
 	let messageType = '';
+	let requestLoading = false;
+	let requestMessage = '';
+	let requestMessageType = '';
 
 	const handleJoinCourse = async () => {
 		if (!joinId.trim()) {
@@ -45,6 +49,28 @@
 		}
 	};
 
+	const handleInstructorRequest = () => {
+		requestLoading = true;
+		requestMessage = '';
+		requestMessageType = '';
+
+		return async (event: {
+			result: { type: string; data?: { success?: string; error?: string } }
+		}) => {
+			const { result } = event;
+			requestLoading = false;
+
+			if (result.type === 'success' && result.data?.success) {
+				requestMessage = result.data.success;
+				requestMessageType = 'success';
+				return;
+			}
+
+			requestMessage = result.type === 'success' ? result.data?.error ?? 'Request failed.' : 'Request failed.';
+			requestMessageType = 'error';
+		};
+	};
+
 	export let data;
 </script>
 
@@ -78,15 +104,29 @@
 		</div>
 
 		<!-- Become Instructor Section -->
+		{#if data.user.role === 'student'}
 		<div class="bg-white rounded-lg shadow-md p-6">
 			<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
 			<p class="text-gray-600 mb-4">
 				Create your own course and start teaching. Contact an admin to upgrade your account.
 			</p>
-			<button type="button" class="px-6 py-2 bg-gray-400 text-white rounded-lg">
-				<p>Request Instructor Access</p>
-			</button>
+			<form action="?/handleInstructorRequest" method="POST" use:enhance={handleInstructorRequest}>
+				<button
+					type="submit"
+					disabled={requestLoading}
+					class="px-6 py-2 bg-gray-400 text-white rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+				>
+					{requestLoading ? 'Submitting...' : 'Request Instructor Access'}
+				</button>
+				<input type="hidden" name="type" value="instructor_request" />
+				{#if requestMessage}
+					<p class={requestMessageType === 'success' ? 'text-green-500 mt-2' : 'text-red-500 mt-2'}>
+						{requestMessage}
+					</p>
+				{/if}
+			</form>
 		</div>
+		{/if}
 	</div>
 
 	{#if message}

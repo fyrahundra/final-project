@@ -86,6 +86,18 @@ export const verificationTokenTable = pgTable('verification_token', {
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+// Admin Request table (for users to request role changes, account issues, etc.)
+export const adminRequestTable = pgTable('admin_request', {
+	id: text('id').primaryKey(),
+	userId: text('user_id')
+		.references(() => userTable.id, { onDelete: 'cascade' })
+		.notNull(),
+	type: text('type').notNull(), // 'role_change', 'account_issue', etc.
+	status: text('status').notNull().default('pending'), // pending, approved, rejected
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 // Enrollment table (junction table for students and courses)
 export const enrollmentTable = pgTable('enrollment', {
 	id: text('id').primaryKey(),
@@ -122,7 +134,8 @@ export const userReltions = relations(userTable, ({ many }) => ({
 	sessions: many(sessionTable),
 	enrollments: many(enrollmentTable),
 	userAssignments: many(userAssignmentTable),
-	verificationTokens: many(verificationTokenTable)
+	verificationTokens: many(verificationTokenTable),
+	adminRequest: many(adminRequestTable)
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -174,6 +187,13 @@ export const userAssignmentRelations = relations(userAssignmentTable, ({ one }) 
 export const verificationTokenRelations = relations(verificationTokenTable, ({ one }) => ({
 	user: one(userTable, {
 		fields: [verificationTokenTable.userId],
+		references: [userTable.id]
+	})
+}));
+
+export const adminRequestRelations = relations(adminRequestTable, ({ one }) => ({
+	user: one(userTable, {
+		fields: [adminRequestTable.userId],
 		references: [userTable.id]
 	})
 }));

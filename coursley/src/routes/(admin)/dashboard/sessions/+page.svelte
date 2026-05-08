@@ -1,37 +1,5 @@
 <script lang="ts">
 	export let data;
-
-	type Result = {
-		name: string;
-		stdout?: string;
-		stderr?: string;
-		error?: string;
-	};
-
-	let running = false;
-	let output = '';
-
-	async function runCode(code: string): Promise<{ stdout: string; stderr: string }> {
-		running = true;
-		output = '';
-
-		try {
-			const res = await fetch('http://localhost:8000/run', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code: code })
-			});
-
-			const data = await res.json();
-			output = data.stdout || data.stderr || data.error || 'No output';
-		} catch (err: any) {
-			output = err.message;
-		}
-
-		running = false;
-
-		return { stdout: output, stderr: '' };
-	}
 </script>
 
 <h2 class="page-title">Active Sessions</h2>

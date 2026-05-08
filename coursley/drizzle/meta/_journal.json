@@ -162,6 +162,20 @@
       "when": 1777462615824,
       "tag": "0022_redundant_secret_warriors",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1778227541285,
+      "tag": "0023_fixed_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1778228515240,
+      "tag": "0024_worried_screwball",
+      "breakpoints": true
     }
   ]
 }

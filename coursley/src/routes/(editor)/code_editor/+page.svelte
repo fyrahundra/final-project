@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MonacoCode from '$lib/components/monaco_code.svelte';
 	import { enhance } from '$app/forms';
+	import { dev } from '$app/environment';
 
 	let output = '';
 	let plots: string[] = [];
@@ -91,8 +92,19 @@
 	async function runCode() {
 		plots = [];
 		running = true;
-		output = 'Running...';
+		output = '';
+			const API_URL = dev ? 'http://localhost:8000' : 'https://coursley-python-api.onrender.com';
 		try {
+			try{
+				output = 'Starting API';
+				await fetch(`${API_URL}`, { method: 'GET' });
+				output = 'Running code...';
+			} catch (healthError) {
+				console.error('Health check failed:', healthError);
+				output = 'Error: Python execution service is currently unavailable.';
+				running = false;
+				return;
+			}
 			const code = monacoComponent.getCode();
 
 			const res = await fetch('/api/run', {

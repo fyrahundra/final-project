@@ -1,0 +1,53 @@
+name: Promote Admin (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Admin email (overrides secret ADMIN_EMAIL)'
+        required: false
+      name:
+        description: 'Admin full name (overrides secret ADMIN_NAME)'
+        required: false
+      password:
+        description: 'Optional password (overrides secret ADMIN_PASSWORD)'
+        required: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies (coursley)
+        working-directory: coursley
+        run: npm ci
+
+      - name: Promote or create admin user
+        working-directory: coursley
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          EMAIL_INPUT="${{ github.event.inputs.email }}"
+          NAME_INPUT="${{ github.event.inputs.name }}"
+          PASS_INPUT="${{ github.event.inputs.password }}"
+
+          EMAIL=${EMAIL_INPUT:-$ADMIN_EMAIL}
+          NAME=${NAME_INPUT:-$ADMIN_NAME}
+          PASS=${PASS_INPUT:-$ADMIN_PASSWORD}
+
+          if [ -z "$EMAIL" ] || [ -z "$NAME" ]; then
+            echo "ERROR: email and name must be provided either as inputs or set in secrets ADMIN_EMAIL and ADMIN_NAME"
+            exit 1
+          fi
+
+          node scripts/promote-admin.js --email="$EMAIL" --name="$NAME" ${PASS:+--password="$PASS"}
