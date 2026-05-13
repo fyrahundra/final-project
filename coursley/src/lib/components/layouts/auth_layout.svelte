@@ -93,7 +93,7 @@
 				{/each}
 			</ul>
 		</nav>
-		{#if data.user && data.user.role === 'instructor'}
+		{#if currentRole === 'instructor'}
 			<button class="add-course" on:click={createCourse}>+</button>
 		{/if}
 	</div>
