@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { enhance } from '$app/forms';
 	export let form;
 
@@ -7,7 +7,7 @@
 	const handleEnhance = () => {
 		isSubmitting = true;
 
-		return async ({ update }) => {
+		return async ({ update }: { update: () => Promise<void> }) => {
 			await update();
 			isSubmitting = false;
 		};
