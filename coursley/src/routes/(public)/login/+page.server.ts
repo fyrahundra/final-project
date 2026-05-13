@@ -1,7 +1,7 @@
 import { fail, redirect, type Actions, type ServerLoad } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { sessionTable, userTable } from '$lib/server/db/schema'; // adjust import path as needed
-import { getUserByName } from '$lib/server/db/query';
+import { getUserByName, getUserByNameOrEmail } from '$lib/server/db/query';
 import argon2 from 'argon2';
 import { createSession, destroySession, detectSuspiciousActivity } from '$lib/server/auth';
 
@@ -28,7 +28,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const users = await getUserByName(userName);
+			const users = await getUserByNameOrEmail(userName);
 			if (users.length === 0) {
 				return fail(400, { error: 'Invalid username or password' });
 			}

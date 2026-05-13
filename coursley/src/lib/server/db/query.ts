@@ -3,7 +3,7 @@ import postgres from 'postgres';
 import * as schema from './schema';
 import { env } from '$env/dynamic/private';
 import { db } from './index';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 
 if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
 
@@ -23,6 +23,14 @@ export function getUser(userId: string) {
 
 export function getUserByName(name: string) {
 	return db.select().from(schema.userTable).where(eq(schema.userTable.name, name)).execute();
+}
+
+export function getUserByNameOrEmail(input: string) {
+	return db
+		.select()
+		.from(schema.userTable)
+		.where(or(eq(schema.userTable.name, input), eq(schema.userTable.email, input)))
+		.execute();
 }
 
 //query course data

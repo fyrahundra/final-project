@@ -5,7 +5,7 @@ services:
     rootDir: coursley
     plan: free
     autoDeploy: true
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm build
+    buildCommand: pnpm install --frozen-lockfile && pnpm db:migrate && pnpm build
     startCommand: node build
     healthCheckPath: /
     envVars:
