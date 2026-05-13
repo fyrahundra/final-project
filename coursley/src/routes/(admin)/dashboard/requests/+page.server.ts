@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db/index';
 import { adminRequestTable, userTable } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { publishAdminRequestChanged, publishUserRoleChanged } from '$lib/server/stream';
 
 export const load: PageServerLoad = async () => {
     try {
@@ -34,10 +35,23 @@ export const actions: Actions = {
                     .set({role: 'instructor'})
                     .where(eq(userTable.id, userId))
                     .execute();
+                
+                // Publish event for user role update
+                await publishUserRoleChanged({
+                    userId,
+                    role: 'instructor'
+                });
+                
                 try {
                     await db.delete(adminRequestTable)
                         .where(eq(adminRequestTable.id, requestId))
                         .execute();
+                    
+                    // Publish event for request status update
+                    await publishAdminRequestChanged({
+                        event: 'approved',
+                        requestId
+                    });
                 } catch (error) {
                     console.error('Error deleting request:', error);
                     return { error: 'Error deleting request: ' + (error instanceof Error ? error.message : String(error)) };
@@ -66,6 +80,12 @@ export const actions: Actions = {
                 await db.delete(adminRequestTable)
                     .where(eq(adminRequestTable.id, requestId))
                     .execute();
+                
+                // Publish event for real-time updates
+                await publishAdminRequestChanged({
+                    event: 'rejected',
+                    requestId
+                });
             } catch (deleteError) {
                 console.error('Error deleting request:', deleteError);
                 return { error: 'Error deleting request: ' + (deleteError instanceof Error ? deleteError.message : String(deleteError)) };

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
 
 	let joinId = '';
 	let loading = false;
@@ -9,6 +10,24 @@
 	let requestLoading = false;
 	let requestMessage = '';
 	let requestMessageType = '';
+	let currentUserRole = '';
+
+	onMount(() => {
+		// Initialize with current user role
+		currentUserRole = data.user.role;
+
+		// Listen for user role changes via SSE
+		const source = new EventSource('/streams');
+		source.addEventListener('user_role_changed', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { role: string };
+			currentUserRole = payload.role;
+		});
+
+		return () => {
+			source.close();
+		};
+	});
 
 	const handleJoinCourse = async () => {
 		if (!joinId.trim()) {
@@ -104,7 +123,7 @@
 		</div>
 
 		<!-- Become Instructor Section -->
-		{#if data.user.role === 'student'}
+		{#if currentUserRole === 'student'}
 		<div class="bg-white rounded-lg shadow-md p-6">
 			<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
 			<p class="text-gray-600 mb-4">

@@ -1,6 +1,17 @@
 <script>
 	import { enhance } from '$app/forms';
 	export let form;
+
+	let isSubmitting = false;
+
+	const handleEnhance = () => {
+		isSubmitting = true;
+
+		return async ({ update }) => {
+			await update();
+			isSubmitting = false;
+		};
+	};
 </script>
 
 <main>
@@ -9,7 +20,7 @@
 			<h1>Create Account</h1>
 			<p class="subtitle">Join Coursley today</p>
 
-			<form method="POST" action="?/register" use:enhance class="form">
+			<form method="POST" action="?/register" use:enhance={handleEnhance} class="form">
 				<div class="form-group">
 					<label for="email">Email</label>
 					<input
@@ -46,17 +57,14 @@
 					/>
 				</div>
 
-				<div class="form-group">
-					<label for="instructor">Instructor</label>
-					<input
-						type="checkbox"
-						id="instructor"
-						name="instructor"
-						autocomplete="off"
-					/>
-				</div>
-
-				<button type="submit" class="btn-primary">Create Account</button>
+				<button type="submit" class="btn-primary" disabled={isSubmitting} aria-busy={isSubmitting}>
+					{#if isSubmitting}
+						<span class="spinner"></span>
+						Creating account...
+					{:else}
+						Create Account
+					{/if}
+				</button>
 			</form>
 
 			{#if form?.error}
@@ -101,11 +109,13 @@
 
 	.card {
 		width: 100%;
-		max-width: 400px;
-		background-color: var(--card-color);
-		border-radius: 8px;
+		max-width: 430px;
+		background: rgba(255, 255, 255, 0.92);
+		backdrop-filter: blur(12px);
+		border-radius: 1.35rem;
 		padding: 2rem;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.45);
 	}
 
 	h1 {
@@ -164,25 +174,47 @@
 	}
 
 	.btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
 		padding: 0.875rem;
-		background-color: var(--primary-color);
+		background: linear-gradient(135deg, var(--primary-color), #2e6fbf);
 		color: white;
 		border: none;
-		border-radius: 6px;
+		border-radius: 0.8rem;
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background-color 0.2s, transform 0.1s;
+		transition:
+			transform 0.16s ease,
+			opacity 0.16s ease,
+			box-shadow 0.16s ease;
 		font-family: inherit;
 	}
 
 	.btn-primary:hover {
-		background-color: #3a7bc8;
 		transform: translateY(-1px);
+		box-shadow: 0 14px 30px rgba(74, 144, 226, 0.28);
 	}
 
 	.btn-primary:active {
 		transform: translateY(0);
+	}
+
+	.btn-primary:disabled {
+		cursor: progress;
+		opacity: 0.82;
+		box-shadow: none;
+	}
+
+	.spinner {
+		width: 0.9rem;
+		height: 0.9rem;
+		border-radius: 999px;
+		border: 2px solid rgba(255, 255, 255, 0.35);
+		border-top-color: white;
+		animation: spin 0.8s linear infinite;
 	}
 
 	.error-message {
@@ -227,5 +259,11 @@
 
 	.auth-link a:hover {
 		text-decoration: underline;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

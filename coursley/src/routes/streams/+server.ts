@@ -3,7 +3,9 @@ import {
 	subscribeToAssignmentCreated,
 	subscribeToAssignmentSubmitted,
 	subscribeToProfilePicture,
-	subscribeToTheme
+	subscribeToTheme,
+	subscribeToAdminRequest,
+	subscribeToUserRoleChanged
 } from '$lib/server/stream';
 import { env } from '$env/dynamic/private';
 
@@ -30,6 +32,8 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 	let unsubscribeProfilePicture: (() => void) | undefined;
 	let unsubscribeAssignmentSubmitted: (() => void) | undefined;
 	let unsubscribeAssignmentCreated: (() => void) | undefined;
+	let unsubscribeAdminRequest: (() => void) | undefined;
+	let unsubscribeUserRoleChanged: (() => void) | undefined;
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
@@ -77,6 +81,23 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				controller.enqueue(encoder.encode(`event: assignment_created\ndata: ${data}\n\n`));
 			};
 
+			const sendAdminRequestChanged = (payload: {
+				event: 'created' | 'approved' | 'rejected';
+				requestId: string;
+			}) => {
+				if (isClosed) return;
+				const data = JSON.stringify(payload);
+				controller.enqueue(encoder.encode(`event: admin_request_changed\ndata: ${data}\n\n`));
+			};
+
+			const sendUserRoleChanged = (payload: {
+				role: string;
+			}) => {
+				if (isClosed) return;
+				const data = JSON.stringify(payload);
+				controller.enqueue(encoder.encode(`event: user_role_changed\ndata: ${data}\n\n`));
+			};
+
 			const sendAutosaveTick = () => {
 				if (isClosed) return;
 				const data = JSON.stringify({
@@ -114,6 +135,14 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 					unsubscribeAssignmentCreated();
 					unsubscribeAssignmentCreated = undefined;
 				}
+				if (unsubscribeAdminRequest) {
+					unsubscribeAdminRequest();
+					unsubscribeAdminRequest = undefined;
+				}
+				if (unsubscribeUserRoleChanged) {
+					unsubscribeUserRoleChanged();
+					unsubscribeUserRoleChanged = undefined;
+				}
 			};
 
 			request.signal.addEventListener('abort', cleanup);
@@ -145,6 +174,14 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				}
 			);
 
+			unsubscribeAdminRequest = subscribeToAdminRequest(({ event, requestId }) => {
+				sendAdminRequestChanged({ event, requestId });
+			});
+
+			unsubscribeUserRoleChanged = subscribeToUserRoleChanged(userId, ({ role }) => {
+				sendUserRoleChanged({ role });
+			});
+
 			pingInterval = setInterval(() => {
 				if (isClosed) return;
 				controller.enqueue(encoder.encode(': ping\n\n'));
@@ -172,6 +209,12 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			}
 			if (unsubscribeAssignmentCreated) {
 				unsubscribeAssignmentCreated();
+			}
+			if (unsubscribeAdminRequest) {
+				unsubscribeAdminRequest();
+			}
+			if (unsubscribeUserRoleChanged) {
+				unsubscribeUserRoleChanged();
 			}
 		}
 	});

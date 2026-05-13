@@ -8,9 +8,10 @@
 
 	let currentTheme: 'light' | 'dark' = data.user?.theme ?? 'light';
 	let currentProfilePicture: string | null = data.user?.profilePicture ?? null;
+	let currentRole: string = data.user?.role ?? 'student';
 	let isCreateCourseOpen = false;
 	$: user = data.user
-		? { ...data.user, theme: currentTheme, profilePicture: currentProfilePicture }
+		? { ...data.user, theme: currentTheme, profilePicture: currentProfilePicture, role: currentRole }
 		: null;
 	$: pathname = $page.url.pathname;
 	$: segments = pathname.split('/').filter(Boolean);
@@ -53,6 +54,12 @@
 			const message = event as MessageEvent<string>;
 			const payload = JSON.parse(message.data) as { profilePicture: string | null };
 			currentProfilePicture = payload.profilePicture;
+		});
+
+		source.addEventListener('user_role_changed', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { role: string };
+			currentRole = payload.role;
 		});
 
 		return () => {

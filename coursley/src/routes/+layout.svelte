@@ -18,9 +18,26 @@
 		window.addEventListener('theme-change', onThemeChange as EventListener);
 		window.addEventListener('storage', applyFromStorage);
 
+		// Listen for user role changes via SSE
+		const source = new EventSource('/streams');
+		source.addEventListener('user_role_changed', (event) => {
+			try {
+				const payload = JSON.parse(event.data);
+				window.dispatchEvent(new CustomEvent('user-role-change', { detail: payload }));
+			} catch (error) {
+				console.error('Error parsing user role change event:', error);
+			}
+		});
+
+		source.addEventListener('error', () => {
+			console.error('SSE connection error');
+			source.close();
+		});
+
 		return () => {
 			window.removeEventListener('theme-change', onThemeChange as EventListener);
 			window.removeEventListener('storage', applyFromStorage);
+			source.close();
 		};
 	});
 </script>

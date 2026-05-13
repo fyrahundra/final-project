@@ -39,18 +39,26 @@ type ProfilePictureListener = (payload: ProfilePicturePayload) => void;
 type AssignmentSubmittedListener = (payload: AssignmentSubmittedPayload) => void;
 type AssignmentCreatedListener = (payload: AssignmentCreatedPayload) => void;
 
-const THEME_CHANNEL = 'theme:changed';
-const PROFILE_PICTURE_CHANNEL = 'profile-picture:changed';
-const ASSIGNMENT_SUBMITTED_CHANNEL = 'assignment:submitted';
-const ASSIGNMENT_CREATED_CHANNEL = 'assignment:created';
+type AdminRequestChangedPayload = {
+	event: 'created' | 'approved' | 'rejected';
+	requestId: string;
+};
+
+type AdminRequestChangedListener = (payload: AdminRequestChangedPayload) => void;
+
+type UserRoleChangedPayload = {
+	userId: string;
+	role: string;
+};
+
+type UserRoleChangedListener = (payload: UserRoleChangedPayload) => void;
+
 const localListeners = new Map<string, Set<ThemeListener>>();
 const localProfilePictureListeners = new Map<string, Set<ProfilePictureListener>>();
 const localAssignmentSubmittedListeners = new Map<string, Set<AssignmentSubmittedListener>>();
 const localAssignmentCreatedListeners = new Map<string, Set<AssignmentCreatedListener>>();
-
-let redisReady = false;
-let redisInitStarted = false;
-let redisPublisher: import('redis').RedisClientType | null = null;
+const localAdminRequestListeners = new Set<AdminRequestChangedListener>();
+const localUserRoleListeners = new Map<string, Set<UserRoleChangedListener>>();
 
 function notifyLocal(payload: ThemePayload) {
 	const listeners = localListeners.get(payload.userId);
@@ -84,72 +92,21 @@ function notifyLocalAssignmentCreated(payload: AssignmentCreatedPayload) {
 	}
 }
 
-async function initRedis() {
-	if (redisReady || redisInitStarted) return;
-	const redisUrl = process.env.REDIS_URL;
-	if (!redisUrl) return;
+function notifyLocalAdminRequestChanged(payload: AdminRequestChangedPayload) {
+	for (const listener of localAdminRequestListeners) {
+		listener(payload);
+	}
+}
 
-	redisInitStarted = true;
-
-	try {
-		const { createClient } = await import('redis');
-		const subscriber = createClient({ url: redisUrl });
-		redisPublisher = createClient({ url: redisUrl });
-
-		subscriber.on('error', (error) => {
-			console.error('Redis subscriber error:', error);
-		});
-		redisPublisher.on('error', (error) => {
-			console.error('Redis publisher error:', error);
-		});
-
-		await Promise.all([subscriber.connect(), redisPublisher.connect()]);
-
-		await subscriber.subscribe(THEME_CHANNEL, (message) => {
-			try {
-				const payload = JSON.parse(message) as ThemePayload;
-				notifyLocal(payload);
-			} catch (error) {
-				console.error('Failed to parse theme event:', error);
-			}
-		});
-
-		await subscriber.subscribe(PROFILE_PICTURE_CHANNEL, (message) => {
-			try {
-				const payload = JSON.parse(message) as ProfilePicturePayload;
-				notifyLocalProfilePicture(payload);
-			} catch (error) {
-				console.error('Failed to parse profile picture event:', error);
-			}
-		});
-
-		await subscriber.subscribe(ASSIGNMENT_SUBMITTED_CHANNEL, (message) => {
-			try {
-				const payload = JSON.parse(message) as AssignmentSubmittedPayload;
-				notifyLocalAssignmentSubmitted(payload);
-			} catch (error) {
-				console.error('Failed to parse assignment submitted event:', error);
-			}
-		});
-
-		await subscriber.subscribe(ASSIGNMENT_CREATED_CHANNEL, (message) => {
-			try {
-				const payload = JSON.parse(message) as AssignmentCreatedPayload;
-				notifyLocalAssignmentCreated(payload);
-			} catch (error) {
-				console.error('Failed to parse assignment created event:', error);
-			}
-		});
-
-		redisReady = true;
-	} catch (error) {
-		console.error('Redis theme stream disabled:', error);
+function notifyLocalUserRoleChanged(payload: UserRoleChangedPayload) {
+	const listeners = localUserRoleListeners.get(payload.userId);
+	if (!listeners) return;
+	for (const listener of listeners) {
+		listener(payload);
 	}
 }
 
 export function subscribeToTheme(userId: string, listener: ThemeListener) {
-	void initRedis();
-
 	const listeners = localListeners.get(userId) ?? new Set<ThemeListener>();
 	listeners.add(listener);
 	localListeners.set(userId, listeners);
@@ -165,8 +122,6 @@ export function subscribeToTheme(userId: string, listener: ThemeListener) {
 }
 
 export function subscribeToProfilePicture(userId: string, listener: ProfilePictureListener) {
-	void initRedis();
-
 	const listeners = localProfilePictureListeners.get(userId) ?? new Set<ProfilePictureListener>();
 	listeners.add(listener);
 	localProfilePictureListeners.set(userId, listeners);
@@ -185,8 +140,6 @@ export function subscribeToAssignmentSubmitted(
 	userId: string,
 	listener: AssignmentSubmittedListener
 ) {
-	void initRedis();
-
 	const listeners =
 		localAssignmentSubmittedListeners.get(userId) ?? new Set<AssignmentSubmittedListener>();
 	listeners.add(listener);
@@ -206,8 +159,6 @@ export function subscribeToAssignmentCreated(
 	userId: string,
 	listener: AssignmentCreatedListener
 ) {
-	void initRedis();
-
 	const listeners =
 		localAssignmentCreatedListeners.get(userId) ?? new Set<AssignmentCreatedListener>();
 	listeners.add(listener);
@@ -225,44 +176,47 @@ export function subscribeToAssignmentCreated(
 
 export async function publishThemeChanged(payload: ThemePayload) {
 	notifyLocal(payload);
-	await initRedis();
-
-	if (!redisReady || !redisPublisher) {
-		return;
-	}
-
-	await redisPublisher.publish(THEME_CHANNEL, JSON.stringify(payload));
 }
 
 export async function publishProfilePictureChanged(payload: ProfilePicturePayload) {
 	notifyLocalProfilePicture(payload);
-	await initRedis();
-
-	if (!redisReady || !redisPublisher) {
-		return;
-	}
-
-	await redisPublisher.publish(PROFILE_PICTURE_CHANNEL, JSON.stringify(payload));
 }
 
 export async function publishAssignmentSubmitted(payload: AssignmentSubmittedPayload) {
 	notifyLocalAssignmentSubmitted(payload);
-	await initRedis();
-
-	if (!redisReady || !redisPublisher) {
-		return;
-	}
-
-	await redisPublisher.publish(ASSIGNMENT_SUBMITTED_CHANNEL, JSON.stringify(payload));
 }
 
 export async function publishAssignmentCreated(payload: AssignmentCreatedPayload) {
 	notifyLocalAssignmentCreated(payload);
-	await initRedis();
+}
 
-	if (!redisReady || !redisPublisher) {
-		return;
-	}
+export function subscribeToAdminRequest(listener: AdminRequestChangedListener) {
+	localAdminRequestListeners.add(listener);
 
-	await redisPublisher.publish(ASSIGNMENT_CREATED_CHANNEL, JSON.stringify(payload));
+	return () => {
+		localAdminRequestListeners.delete(listener);
+	};
+}
+
+export async function publishAdminRequestChanged(payload: AdminRequestChangedPayload) {
+	notifyLocalAdminRequestChanged(payload);
+}
+
+export function subscribeToUserRoleChanged(userId: string, listener: UserRoleChangedListener) {
+	const listeners = localUserRoleListeners.get(userId) ?? new Set<UserRoleChangedListener>();
+	listeners.add(listener);
+	localUserRoleListeners.set(userId, listeners);
+
+	return () => {
+		const userListeners = localUserRoleListeners.get(userId);
+		if (!userListeners) return;
+		userListeners.delete(listener);
+		if (userListeners.size === 0) {
+			localUserRoleListeners.delete(userId);
+		}
+	};
+}
+
+export async function publishUserRoleChanged(payload: UserRoleChangedPayload) {
+	notifyLocalUserRoleChanged(payload);
 }

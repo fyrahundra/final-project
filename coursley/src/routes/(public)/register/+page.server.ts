@@ -25,7 +25,6 @@ export const actions: Actions = {
 		const name = formData.get('username') as string;
 		const email = formData.get('email') as string;
 		const password = formData.get('password') as string;
-		const instructor = formData.get('instructor') === 'on';
 
 		if (!name || !email || !password) {
 			return fail(400, { error: 'Name, email, and password are required' });
@@ -58,7 +57,8 @@ export const actions: Actions = {
 				name,
 				email,
 				passwordHash,
-				role: instructor ? 'instructor' : 'student'
+				role: 'student',
+				createdAt: new Date(),
 			});
 
 			let userAgent = request.headers.get('user-agent') || 'unknown';
