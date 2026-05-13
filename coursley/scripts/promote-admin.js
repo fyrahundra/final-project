@@ -37,22 +37,36 @@ async function main() {
   const sql = postgres(DATABASE_URL, { ssl: 'require' });
 
   try {
+    const passwordHash = password ? await argon2.hash(password) : null;
+
     // Check existing user by email
     const existing = await sql`select id, email from "user" where email = ${email}`;
     if (existing.length > 0) {
       const id = existing[0].id;
-      console.log(`User exists (id=${id}). Promoting to admin and instructor role.`);
-      await sql`update "user" set is_admin = true, role = 'instructor' where id = ${id}`;
-      console.log('Promotion complete.');
+      console.log(`User exists (id=${id}). Updating account, promoting to admin, and setting instructor role.`);
+      if (passwordHash) {
+        await sql`
+          update "user"
+          set name = ${name}, email = ${email}, "passwordHash" = ${passwordHash}, is_admin = true, role = 'instructor'
+          where id = ${id}
+        `;
+      } else {
+        await sql`
+          update "user"
+          set name = ${name}, email = ${email}, is_admin = true, role = 'instructor'
+          where id = ${id}
+        `;
+      }
+      console.log('Account update complete.');
       process.exit(0);
     }
 
     // Create new user
     const userId = randomUUID();
     const pwd = password || Math.random().toString(36).slice(2, 12);
-    const passwordHash = await argon2.hash(pwd);
+    const newPasswordHash = passwordHash || (await argon2.hash(pwd));
 
-    await sql`insert into "user" (id, name, email, "passwordHash", role, is_admin) values (${userId}, ${name}, ${email}, ${passwordHash}, 'instructor', true)`;
+    await sql`insert into "user" (id, name, email, "passwordHash", role, is_admin) values (${userId}, ${name}, ${email}, ${newPasswordHash}, 'instructor', true)`;
 
     console.log(`Created admin user ${email} with id ${userId}`);
     console.log('If you did not provide a password, a random password was generated (shown below). Save it securely:');
