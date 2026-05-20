@@ -1,7 +1,8 @@
 import type { Actions } from './$types';
 import { db } from '$lib/server/db/index';
-import { adminRequestTable } from '$lib/server/db/schema';
+import { adminRequestTable, userTable } from '$lib/server/db/schema';
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
 import { publishAdminRequestChanged } from '$lib/server/stream';
 
 export const actions: Actions = {
@@ -32,6 +33,12 @@ export const actions: Actions = {
 				event: 'created',
 				requestId
 			});
+
+			await db
+				.update(userTable)
+				.set({ pendingInstructor: true })
+				.where(eq(userTable.id, user.id))
+				.execute();
 
 			return { success: 'Instructor access request submitted successfully' };
 		} catch (error) {

@@ -137,7 +137,8 @@
 		</div>
 
 		<!-- Become Instructor Section -->
-		{#if currentUserRole === 'student'}
+		<!--TODO: Gör det omöjligt för användare att be om instruktörsroll om de redan gjort det-->
+		{#if currentUserRole === 'student' || data.user.pendingInstructor}
 			<div class="bg-white rounded-lg shadow-md p-6">
 				<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
 				<p class="text-gray-600 mb-4">

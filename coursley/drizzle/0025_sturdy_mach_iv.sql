@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "pending_instructor" boolean DEFAULT false;

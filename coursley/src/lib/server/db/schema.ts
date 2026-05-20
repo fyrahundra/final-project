@@ -13,6 +13,7 @@ export const userTable = pgTable('user', {
 	profilePicture: text('profile_picture'),
 	role: roleEnum('role').notNull(),
 	isAdmin: boolean('is_admin').default(false),
+	pendingInstructor: boolean('pending_instructor').default(false),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	theme: text('theme').notNull().default('light') // light or dark
 });
