@@ -1,11 +1,13 @@
 <script lang="ts">
 	import AssignmentCreate from '$lib/components/assignment_create.svelte';
 	import { onDestroy, onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 
 	export let data;
 
 	let showCreateAssignment = false;
 	let assignments = data.assignments ?? [];
+	let studentCount = data.studentCount;
 	type AssignmentItem = (typeof assignments)[number];
 	let source: EventSource | null = null;
 
@@ -24,6 +26,14 @@
 
 			assignments = [...assignments, payload.assignment];
 		});
+
+		source.addEventListener('student_count_changed', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { courseId: string; count: number };
+
+			if (payload.courseId !== String(data.course?.id)) return;
+			studentCount = payload.count;
+		});
 	});
 
 	onDestroy(() => {
@@ -36,10 +46,15 @@
 
 <div class="course-meta-row">
 	{#if data.isInstructor}
-		<h4>Course ID: {data.course?.joinId}</h4>
+		<div class="meta-info">
+			<h4>Course ID: {data.course?.joinId}</h4>
+			<h4>Students: {studentCount}</h4>
+		</div>
 		<button class="create-btn" on:click={() => (showCreateAssignment = true)}
 			>Create Assignment</button
 		>
+	{:else}
+		<h4>Students: {studentCount}</h4>
 	{/if}
 </div>
 
@@ -48,9 +63,11 @@
 	<p class="empty-state">No assignments yet.</p>
 {:else}
 	<ul class="assignment-list">
-		{#each assignments as assignment}
+		{#each assignments as assignment (assignment.id)}
 			<li class="assignment-card">
-				<a class="assignment-link" href={`/courses/${data.course?.id}/assignments/${assignment.id}`}
+				<a
+					class="assignment-link"
+					href={resolve(`/courses/${data.course?.id}/assignments/${assignment.id}`)}
 					>{assignment.title}</a
 				>
 			</li>
@@ -62,7 +79,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="assignment-create-backdrop" on:click={() => (showCreateAssignment = false)}>
 		<div class="assignment-create-modal" on:click|stopPropagation>
-			<AssignmentCreate action={`?/createAssignment`} />
+			<AssignmentCreate action="?/createAssignment" />
 		</div>
 	</div>
 {/if}
@@ -77,6 +94,16 @@
 	}
 
 	.course-meta-row h4 {
+		margin: 0;
+	}
+
+	.meta-info {
+		display: flex;
+		gap: 1.5rem;
+		align-items: center;
+	}
+
+	.meta-info h4 {
 		margin: 0;
 	}
 

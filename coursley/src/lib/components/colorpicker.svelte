@@ -47,9 +47,7 @@
 </button>
 
 {#if showPicker}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="picker-overlay" role="presentation" tabindex="-1" on:mousedown={closeOnBackdrop}>
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="picker-modal"
 			role="dialog"

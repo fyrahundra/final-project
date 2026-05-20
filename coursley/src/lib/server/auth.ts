@@ -3,7 +3,8 @@ import { sessionTable } from './db/schema';
 import { randomBytes, randomUUID } from 'crypto';
 import { getSession } from './db/query';
 import { eq } from 'drizzle-orm';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
+import type { Cookies } from '@sveltejs/kit';
 
 export function generateSessionToken() {
 	return randomBytes(32).toString('hex');
@@ -79,7 +80,7 @@ export async function destroySession(token: string) {
 
 export function validatePassword(password: string, name: string, email: string) {
 	// Implement password validation logic (e.g., check length, complexity)
-	let errorMessage = [];
+	const errorMessage = [];
 	if (password.length < 8) {
 		errorMessage.push('Password must be at least 8 characters long');
 	}
@@ -127,7 +128,10 @@ export async function detectSuspiciousActivity(userId: string) {
 	}
 }
 
-export async function requireAuth(locals: { user: any; session: any }, cookies: any) {
+export async function requireAuth(
+	locals: App.Locals,
+	cookies: Cookies
+): Promise<NonNullable<App.Locals['user']>> {
 	if (!locals.user) {
 		if (locals.session?.token) {
 			await destroySession(locals.session.token);
@@ -137,5 +141,5 @@ export async function requireAuth(locals: { user: any; session: any }, cookies: 
 		locals.session = null;
 		throw redirect(301, '/login');
 	}
-	return locals.user;
+	return locals.user as NonNullable<App.Locals['user']>;
 }

@@ -77,7 +77,9 @@
 			await import('monaco-editor/esm/vs/basic-languages/python/python.contribution.js');
 			monacoModule = monaco;
 
-			(globalThis as typeof globalThis & { MonacoEnvironment?: { getWorker: () => Worker } }).MonacoEnvironment = {
+			(
+				globalThis as typeof globalThis & { MonacoEnvironment?: { getWorker: () => Worker } }
+			).MonacoEnvironment = {
 				getWorker: () => new EditorWorker()
 			};
 

@@ -54,16 +54,19 @@
 			}, 2000);
 		};
 
-		return async ({ result }: { result: { type: string; data?: { success?: boolean; error?: string } } }) => {
+		return async ({
+			result
+		}: {
+			result: { type: string; data?: { success?: boolean; error?: string } };
+		}) => {
 			if (result.type === 'success' && result.data?.success) {
 				saveMessage = 'Saved to database.';
 				clearSaveMessage();
 				return;
 			}
 
-			saveMessage = result.type === 'success'
-				? result.data?.error ?? 'Save failed.'
-				: 'Save failed.';
+			saveMessage =
+				result.type === 'success' ? (result.data?.error ?? 'Save failed.') : 'Save failed.';
 			clearSaveMessage();
 		};
 	}
@@ -76,7 +79,11 @@
 			saveMessageTimer = setTimeout(() => (saveMessage = ''), 2000);
 		};
 
-		return async ({ result }: { result: { type: string; data?: any } }) => {
+		return async ({
+			result
+		}: {
+			result: { type: string; data?: { success?: boolean; error?: string } };
+		}) => {
 			if (result.type === 'success' && result.data?.success) {
 				saveMessage = 'Turned in.';
 				turnedIn = true;
@@ -84,7 +91,8 @@
 				return;
 			}
 
-			saveMessage = result.type === 'success' ? result.data?.error ?? 'Turn in failed.' : 'Turn in failed.';
+			saveMessage =
+				result.type === 'success' ? (result.data?.error ?? 'Turn in failed.') : 'Turn in failed.';
 			clearSaveMessage();
 		};
 	}
@@ -93,9 +101,9 @@
 		plots = [];
 		running = true;
 		output = '';
-			const API_URL = dev ? 'http://localhost:8000' : 'https://coursley-python-api.onrender.com';
+		const API_URL = dev ? 'http://localhost:8000' : 'https://coursley-python-api.onrender.com';
 		try {
-			try{
+			try {
 				output = 'Starting API';
 				await fetch(`${API_URL}`, { method: 'GET' });
 				output = 'Running code...';
@@ -162,8 +170,8 @@
 				plots = data.plots;
 				console.log('Updated plots state:', plots);
 			}
-		} catch (err: any) {
-			console.error('Error:', err.message);
+		} catch (err: unknown) {
+			console.error('Error:', (err as Error).message);
 			output = 'An error occurred while running the code.';
 		} finally {
 			running = false;
@@ -184,7 +192,7 @@
 				<div class="panel-header">
 					<h3 class="panel-title">Code</h3>
 					{#if saveMessage}
-							<p class="save-status">{saveMessage}</p>
+						<p class="save-status">{saveMessage}</p>
 					{/if}
 					{#if isTemplate}
 						<p class="view-only-badge">Template Mode</p>
@@ -234,7 +242,7 @@
 				<div class="output-body">
 					<div class="plots-container">
 						{#if plots.length > 0}
-							{#each plots as plot}
+							{#each plots as plot (plot)}
 								<img src={resolvePlotSrc(plot)} alt="Plot" class="plot-image" />
 							{/each}
 						{:else}
@@ -505,5 +513,5 @@
 		height: auto;
 		border-radius: 0.25rem;
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    }
+	}
 </style>

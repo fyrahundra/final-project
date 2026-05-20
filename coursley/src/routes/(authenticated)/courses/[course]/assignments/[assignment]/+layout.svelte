@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import type { LayoutData } from './$types';
 
 	export let data;
 
 	const assignment = data.assignment;
 	const isInstructorView = data.isInstructorView;
 	const accessError = data.accessError;
-	let studentAssignments: any[] = data.studentAssignments ?? [];
+	let studentAssignments: LayoutData['studentAssignments'] = data.studentAssignments ?? [];
 	let source: EventSource | null = null;
 
 	function getEditorTarget() {
@@ -80,7 +81,7 @@
 	<h4 class="section-title">Student submissions</h4>
 	{#if studentAssignments?.length}
 		<ul class="submission-list">
-			{#each studentAssignments as submission}
+			{#each studentAssignments as submission (submission.id)}
 				<li class="submission-card">
 					<div class="submission-meta">
 						<strong>{submission.user?.name || submission.user?.email || submission.userId}</strong>

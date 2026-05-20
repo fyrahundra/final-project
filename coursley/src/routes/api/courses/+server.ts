@@ -1,9 +1,11 @@
 import type { RequestHandler } from './$types';
-import { redirect, json } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { courseTable, enrollmentTable } from '$lib/server/db/schema';
 import { randomUUID } from 'crypto';
 import { eq, and } from 'drizzle-orm';
+import { publishStudentCountChanged } from '$lib/server/stream';
+import { getCourseStudentCount } from '$lib/server/db/query';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const formData = await request.formData();
@@ -57,6 +59,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			})
 			.execute();
 
+		// Get updated student count and publish event
+		const updatedCount = await getCourseStudentCount(course.id);
+		await publishStudentCountChanged({
+			courseId: course.id,
+			count: updatedCount
+		});
+
 		return json({ success: true, message: 'Successfully joined course' }, { status: 200 });
 	}
 
@@ -89,6 +98,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			courseId: course.id
 		})
 		.execute();
+
+	// Publish initial student count
+	const initialCount = await getCourseStudentCount(course.id);
+	await publishStudentCountChanged({
+		courseId: course.id,
+		count: initialCount
+	});
 
 	return json(
 		{ success: true, message: 'Course created successfully', courseId: course.id },

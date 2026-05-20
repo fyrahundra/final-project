@@ -3,6 +3,7 @@
 	import UserDisplay from '../user_display.svelte';
 	import CourseCreate from '../course_create.svelte';
 	import { page } from '$app/stores';
+	import { resolve } from '$app/paths';
 
 	export let data;
 
@@ -10,16 +11,21 @@
 	let currentProfilePicture: string | null = data.user?.profilePicture ?? null;
 	let currentRole: string = data.user?.role ?? 'student';
 	let isCreateCourseOpen = false;
+	let courses: Array<{ id: string; title: string; studentCount?: number; isInstructor?: boolean }> =
+		data.courses ?? [];
 	$: user = data.user
-		? { ...data.user, theme: currentTheme, profilePicture: currentProfilePicture, role: currentRole }
+		? {
+				...data.user,
+				theme: currentTheme,
+				profilePicture: currentProfilePicture,
+				role: currentRole
+			}
 		: null;
 	$: pathname = $page.url.pathname;
 	$: segments = pathname.split('/').filter(Boolean);
 	$: currentCourseId = segments[0] === 'courses' ? segments[1] : null;
 	$: currentCourse = currentCourseId
-		? (data.courses ?? []).find(
-				(course: { id: string; title: string }) => course.id === currentCourseId
-			)
+		? courses.find((course: { id: string; title: string }) => course.id === currentCourseId)
 		: null;
 
 	function applyTheme(theme: 'light' | 'dark') {
@@ -62,6 +68,16 @@
 			currentRole = payload.role;
 		});
 
+		source.addEventListener('student_count_changed', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { courseId: string; count: number };
+
+			// Update the student count for the matching course
+			courses = courses.map((course) =>
+				course.id === payload.courseId ? { ...course, studentCount: payload.count } : course
+			);
+		});
+
 		return () => {
 			source.close();
 		};
@@ -74,10 +90,10 @@
 			class="title"
 			style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;"
 		>
-			<a href="/courses">Coursley</a> |
+			<a href={resolve('/courses')}>Coursley</a> |
 			<nav>
 				{#if currentCourse}
-					<a href={`/courses/${currentCourse.id}`}>{currentCourse.title}</a>
+					<a href={resolve(`/courses/${currentCourse.id}`)}>{currentCourse.title}</a>
 				{/if}
 			</nav>
 		</h1>
@@ -88,8 +104,14 @@
 	<div class="sidebar">
 		<nav>
 			<ul>
-				{#each data.courses as course}
-					<li><a href={`/courses/${course.id}`}>{course.title}</a></li>
+				{#each courses as course (course.id)}
+					<li class:instructor-course={course.isInstructor}>
+						<a
+							href={resolve(`/courses/${course.id}`)}
+							title={course.isInstructor ? 'You are the instructor' : 'Enrolled as student'}
+							>{course.title}</a
+						>
+					</li>
 				{/each}
 			</ul>
 		</nav>
@@ -162,8 +184,6 @@
 		padding: 0;
 		list-style: none;
 	}
-
-	.sidebar h3,
 	.sidebar li {
 		margin: 0 0 0.5rem 0;
 	}
@@ -174,6 +194,11 @@
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+	}
+
+	.instructor-course a::before {
+		content: '👨‍🏫 ';
+		margin-right: 0.25rem;
 	}
 
 	.title {

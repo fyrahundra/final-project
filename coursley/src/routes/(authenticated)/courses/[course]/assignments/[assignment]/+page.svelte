@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import type { PageData } from './$types';
 
 	export let data;
 	const assignment = data.assignment;
 	const error = data.accessError ?? data.error;
-	let userAssignment: any = data.userAssignment;
+	let userAssignment: PageData['userAssignment'] = data.userAssignment;
 	let source: EventSource | null = null;
 
 	function getEditorTarget() {
@@ -74,8 +75,7 @@
 			<div>
 				<button
 					class="open-btn"
-					onclick={() =>
-						openEditor({ id: String(userAssignment?.id ?? ''), view: 'only' })}
+					onclick={() => openEditor({ id: String(userAssignment?.id ?? ''), view: 'only' })}
 					>View Submission</button
 				>
 				<form action="?/takeBack" method="post">
@@ -86,9 +86,7 @@
 				</form>
 			</div>
 		{:else}
-			<button
-				class="open-btn"
-				onclick={() => openEditor({ id: String(userAssignment?.id ?? '') })}
+			<button class="open-btn" onclick={() => openEditor({ id: String(userAssignment?.id ?? '') })}
 				>Open Assignment</button
 			>
 		{/if}

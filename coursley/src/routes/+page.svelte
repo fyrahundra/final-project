@@ -1,3 +1,7 @@
+<script>
+	import { resolve } from '$app/paths';
+</script>
+
 <h1>Welcome to Coursley!</h1>
 
 <p>
@@ -10,7 +14,7 @@
 	educators. Start your learning journey with Coursley today!
 </p>
 
-<a class="getStarted" href="/courses">Get Started</a>
+<a class="getStarted" href={resolve('/courses')}>Get Started</a>
 
 <style>
 	.getStarted {

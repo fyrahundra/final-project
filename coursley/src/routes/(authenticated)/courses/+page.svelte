@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 
 	let joinId = '';
 	let loading = false;
@@ -16,12 +17,22 @@
 		// Initialize with current user role
 		currentUserRole = data.user.role;
 
-		// Listen for user role changes via SSE
+		// Listen for user role changes and student count changes via SSE
 		const source = new EventSource('/streams');
 		source.addEventListener('user_role_changed', (event) => {
 			const message = event as MessageEvent<string>;
 			const payload = JSON.parse(message.data) as { role: string };
 			currentUserRole = payload.role;
+		});
+
+		source.addEventListener('student_count_changed', (event) => {
+			const message = event as MessageEvent<string>;
+			const payload = JSON.parse(message.data) as { courseId: string; count: number };
+
+			// Update the student count for the matching course
+			data.courses = data.courses.map((course) =>
+				course.id === payload.courseId ? { ...course, studentCount: payload.count } : course
+			);
 		});
 
 		return () => {
@@ -61,7 +72,9 @@
 				messageType = 'error';
 			}
 		} catch (error) {
-			message = 'An error occurred. Please try again.';
+			message =
+				'An error occurred. Please try again. Error details: ' +
+				(error instanceof Error ? error.message : String(error));
 			messageType = 'error';
 		} finally {
 			loading = false;
@@ -74,7 +87,7 @@
 		requestMessageType = '';
 
 		return async (event: {
-			result: { type: string; data?: { success?: string; error?: string } }
+			result: { type: string; data?: { success?: string; error?: string } };
 		}) => {
 			const { result } = event;
 			requestLoading = false;
@@ -85,7 +98,8 @@
 				return;
 			}
 
-			requestMessage = result.type === 'success' ? result.data?.error ?? 'Request failed.' : 'Request failed.';
+			requestMessage =
+				result.type === 'success' ? (result.data?.error ?? 'Request failed.') : 'Request failed.';
 			requestMessageType = 'error';
 		};
 	};
@@ -124,27 +138,33 @@
 
 		<!-- Become Instructor Section -->
 		{#if currentUserRole === 'student'}
-		<div class="bg-white rounded-lg shadow-md p-6">
-			<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
-			<p class="text-gray-600 mb-4">
-				Create your own course and start teaching. Contact an admin to upgrade your account.
-			</p>
-			<form action="?/handleInstructorRequest" method="POST" use:enhance={handleInstructorRequest}>
-				<button
-					type="submit"
-					disabled={requestLoading}
-					class="px-6 py-2 bg-gray-400 text-white rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
+				<p class="text-gray-600 mb-4">
+					Create your own course and start teaching. Contact an admin to upgrade your account.
+				</p>
+				<form
+					action="?/handleInstructorRequest"
+					method="POST"
+					use:enhance={handleInstructorRequest}
 				>
-					{requestLoading ? 'Submitting...' : 'Request Instructor Access'}
-				</button>
-				<input type="hidden" name="type" value="instructor_request" />
-				{#if requestMessage}
-					<p class={requestMessageType === 'success' ? 'text-green-500 mt-2' : 'text-red-500 mt-2'}>
-						{requestMessage}
-					</p>
-				{/if}
-			</form>
-		</div>
+					<button
+						type="submit"
+						disabled={requestLoading}
+						class="px-6 py-2 bg-gray-400 text-white rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+					>
+						{requestLoading ? 'Submitting...' : 'Request Instructor Access'}
+					</button>
+					<input type="hidden" name="type" value="instructor_request" />
+					{#if requestMessage}
+						<p
+							class={requestMessageType === 'success' ? 'text-green-500 mt-2' : 'text-red-500 mt-2'}
+						>
+							{requestMessage}
+						</p>
+					{/if}
+				</form>
+			</div>
 		{/if}
 	</div>
 
@@ -165,12 +185,17 @@
 		{#if data.courses.length > 0}
 			<div class="courses-scroll">
 				{#each data.courses as course (course.id)}
-					<a href={`/courses/${course.id}`} class="course-card">
+					<a href={resolve(`/courses/${course.id}`)} class="course-card">
 						<div class="course-content">
-							<h3>{course.title}</h3>
+							<h3>{course.isInstructor ? '👨‍🏫 ' : ''}{course.title}</h3>
 							<p>{course.description || 'No description'}</p>
 						</div>
-						<p class="course-id">ID: {course.joinId}</p>
+						<div class="course-meta">
+							<p class="course-id">ID: {course.joinId}</p>
+							<p class="student-count">
+								{course.studentCount} student{course.studentCount !== 1 ? 's' : ''}
+							</p>
+						</div>
 					</a>
 				{/each}
 			</div>
@@ -256,7 +281,22 @@
 		color: var(--card-p);
 	}
 
+	.course-meta {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
+		gap: 0.5rem;
+	}
+
 	.course-id {
+		margin: 0;
+		font-size: 0.75rem;
+		color: var(--card-p);
+		white-space: nowrap;
+	}
+
+	.student-count {
 		margin: 0;
 		font-size: 0.75rem;
 		color: var(--card-p);

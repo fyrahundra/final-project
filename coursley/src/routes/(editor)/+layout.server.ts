@@ -5,66 +5,65 @@ import { consumeEntryToken, type EditorTarget } from '$lib/server/entry-token';
 const EDITOR_ACCESS_COOKIE_PREFIX = 'editor_access_grant';
 
 function createGrantCookieName(target: EditorTarget, targetId: string | null) {
-    const encodedTargetId = encodeURIComponent(targetId ?? 'root');
-    return `${EDITOR_ACCESS_COOKIE_PREFIX}_${target}_${encodedTargetId}`;
+	const encodedTargetId = encodeURIComponent(targetId ?? 'root');
+	return `${EDITOR_ACCESS_COOKIE_PREFIX}_${target}_${encodedTargetId}`;
 }
 
 function createGrantValue(
-    userId: string,
-    target: EditorTarget,
-    targetId: string | null,
-    entryToken: string
+	userId: string,
+	target: EditorTarget,
+	targetId: string | null,
+	entryToken: string
 ) {
-    return `${userId}:${target}:${targetId ?? ''}:${entryToken}`;
+	return `${userId}:${target}:${targetId ?? ''}:${entryToken}`;
 }
 
 export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
-    if (!locals.user) {
-        throw redirect(302, '/login');
-    }
+	if (!locals.user) {
+		throw redirect(302, '/login');
+	}
 
-    const path = url.pathname;
-    const target: EditorTarget | null =
-        path === '/RTE' ? 'RTE' : path === '/code_editor' ? 'code_editor' : null;
+	const path = url.pathname;
+	const target: EditorTarget | null =
+		path === '/RTE' ? 'RTE' : path === '/code_editor' ? 'code_editor' : null;
 
-    if (!target) {
-        throw redirect(302, '/courses');
-    }
+	if (!target) {
+		throw redirect(302, '/courses');
+	}
 
-    const targetId =
-        url.searchParams.get('id')?.trim() || url.searchParams.get('templateId')?.trim() || null;
-    const grantCookieName = createGrantCookieName(target, targetId);
-    const entryToken = url.searchParams.get('entry')?.trim();
-    const existingGrant = cookies.get(grantCookieName);
+	const targetId =
+		url.searchParams.get('id')?.trim() || url.searchParams.get('templateId')?.trim() || null;
+	const grantCookieName = createGrantCookieName(target, targetId);
+	const entryToken = url.searchParams.get('entry')?.trim();
+	const existingGrant = cookies.get(grantCookieName);
 
-		if (!entryToken) {
-            throw redirect(302, '/courses');
-        }
+	if (!entryToken) {
+		throw redirect(302, '/courses');
+	}
 
 	const expectedGrant = createGrantValue(locals.user.id, target, targetId, entryToken);
 
 	if (existingGrant !== expectedGrant) {
+		const isValid = await consumeEntryToken({
+			token: entryToken,
+			userId: locals.user.id,
+			target,
+			targetId
+		});
 
-        const isValid = await consumeEntryToken({
-            token: entryToken,
-            userId: locals.user.id,
-            target,
-            targetId
-        });
+		if (!isValid) {
+			throw redirect(302, '/courses');
+		}
 
-        if (!isValid) {
-            throw redirect(302, '/courses');
-        }
+		cookies.set(grantCookieName, expectedGrant, {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: url.protocol === 'https:'
+		});
+	}
 
-        cookies.set(grantCookieName, expectedGrant, {
-            path: '/',
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: url.protocol === 'https:'
-        });
-    }
-
-    return {
-        user: locals.user
-    };
+	return {
+		user: locals.user
+	};
 };

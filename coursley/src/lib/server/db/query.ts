@@ -1,9 +1,7 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
 import * as schema from './schema';
 import { env } from '$env/dynamic/private';
 import { db } from './index';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, count, and, ne } from 'drizzle-orm';
 
 if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
 
@@ -91,4 +89,27 @@ export function getUserAssignmentByUserAndAssignment(userId: string, assignmentI
 			}
 		}
 	});
+}
+
+export async function getCourseStudentCount(courseId: string) {
+	// Get the course to find the instructor ID
+	const course = await db.query.courseTable.findFirst({
+		where: (course, { eq }) => eq(course.id, courseId)
+	});
+
+	if (!course) return 0;
+
+	// Count enrollments excluding the instructor
+	const result = await db
+		.select({ count: count() })
+		.from(schema.enrollmentTable)
+		.where(
+			and(
+				eq(schema.enrollmentTable.courseId, courseId),
+				ne(schema.enrollmentTable.studentId, course.instructorId)
+			)
+		)
+		.execute();
+
+	return result[0]?.count ?? 0;
 }

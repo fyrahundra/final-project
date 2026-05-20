@@ -4,7 +4,6 @@ import { pruneVerificationTokens } from '$lib/server/verification-token';
 import type { Handle } from '@sveltejs/kit';
 
 declare global {
-	// eslint-disable-next-line no-var
 	var __entryTokenPruneInterval: ReturnType<typeof setInterval> | undefined;
 }
 

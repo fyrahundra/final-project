@@ -58,11 +58,11 @@ export const actions: Actions = {
 				email,
 				passwordHash,
 				role: 'student',
-				createdAt: new Date(),
+				createdAt: new Date()
 			});
 
-			let userAgent = request.headers.get('user-agent') || 'unknown';
-			let clientAddress = request.headers.get('x-forwarded-for') || 'unknown';
+			const userAgent = request.headers.get('user-agent') || 'unknown';
+			const clientAddress = request.headers.get('x-forwarded-for') || 'unknown';
 
 			const session = await createSession(userId, clientAddress, userAgent, 14);
 			if (!session) {

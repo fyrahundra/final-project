@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, serial, integer, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Define the role enum for user roles

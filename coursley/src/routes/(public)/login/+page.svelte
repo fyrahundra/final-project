@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	export let form;
 
 	let isSubmitting = false;
@@ -7,7 +8,7 @@
 	const handleEnhance = () => {
 		isSubmitting = true;
 
-		return async ({ update } : { update: () => Promise<void> }) => {
+		return async ({ update }: { update: () => Promise<void> }) => {
 			await update();
 			isSubmitting = false;
 		};
@@ -64,7 +65,7 @@
 			<div class="divider"></div>
 
 			<p class="auth-link">
-				Don't have an account? <a href="/register">Create one</a>
+				Don't have an account? <a href={resolve('/register')}>Create one</a>
 			</p>
 		</div>
 	</div>
@@ -138,7 +139,9 @@
 		background-color: var(--background-color);
 		color: var(--text-color);
 		font-size: 1rem;
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 		font-family: inherit;
 	}
 

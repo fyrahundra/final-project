@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	export let form;
 
 	let isSubmitting = false;
@@ -71,7 +72,7 @@
 				<div class="error-message">
 					{#if Array.isArray(form.error)}
 						<ul>
-							{#each form.error as error}
+							{#each form.error as error (error)}
 								<li>{error}</li>
 							{/each}
 						</ul>
@@ -84,7 +85,7 @@
 			<div class="divider"></div>
 
 			<p class="auth-link">
-				Already have an account? <a href="/login">Sign in</a>
+				Already have an account? <a href={resolve('/login')}>Sign in</a>
 			</p>
 		</div>
 	</div>
@@ -158,7 +159,9 @@
 		background-color: var(--background-color);
 		color: var(--text-color);
 		font-size: 1rem;
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 		font-family: inherit;
 	}
 

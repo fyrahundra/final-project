@@ -105,7 +105,10 @@ export const actions: Actions = {
 
 			return { success: true, userAssignment: updated };
 		} catch (error) {
-			return { success: false, error: 'Failed to take back assignment' };
+			return {
+				success: false,
+				error: 'An error occurred while taking back the assignment. Error: ' + error
+			};
 		}
 	}
 };

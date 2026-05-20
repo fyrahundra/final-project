@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { getCourse } from '$lib/server/db/query';
+import { getCourse, getCourseStudentCount } from '$lib/server/db/query';
 import { db } from '$lib/server/db';
 
 export const load: LayoutServerLoad = async ({ params, locals }) => {
@@ -35,12 +35,15 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 		where: (assignment, { eq }) => eq(assignment.courseId, courseId.toString())
 	});
 
+	const studentCount = await getCourseStudentCount(courseId);
+
 	return {
 		course,
 		assignments,
 		user,
 		isInstructor,
 		isAdmin,
-		hasAccess
+		hasAccess,
+		studentCount
 	};
 };

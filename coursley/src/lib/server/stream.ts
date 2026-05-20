@@ -53,12 +53,20 @@ type UserRoleChangedPayload = {
 
 type UserRoleChangedListener = (payload: UserRoleChangedPayload) => void;
 
+type StudentCountChangedPayload = {
+	courseId: string;
+	count: number;
+};
+
+type StudentCountChangedListener = (payload: StudentCountChangedPayload) => void;
+
 const localListeners = new Map<string, Set<ThemeListener>>();
 const localProfilePictureListeners = new Map<string, Set<ProfilePictureListener>>();
 const localAssignmentSubmittedListeners = new Map<string, Set<AssignmentSubmittedListener>>();
 const localAssignmentCreatedListeners = new Map<string, Set<AssignmentCreatedListener>>();
 const localAdminRequestListeners = new Set<AdminRequestChangedListener>();
 const localUserRoleListeners = new Map<string, Set<UserRoleChangedListener>>();
+const localStudentCountListeners = new Map<string, Set<StudentCountChangedListener>>();
 
 function notifyLocal(payload: ThemePayload) {
 	const listeners = localListeners.get(payload.userId);
@@ -100,6 +108,14 @@ function notifyLocalAdminRequestChanged(payload: AdminRequestChangedPayload) {
 
 function notifyLocalUserRoleChanged(payload: UserRoleChangedPayload) {
 	const listeners = localUserRoleListeners.get(payload.userId);
+	if (!listeners) return;
+	for (const listener of listeners) {
+		listener(payload);
+	}
+}
+
+function notifyLocalStudentCountChanged(payload: StudentCountChangedPayload) {
+	const listeners = localStudentCountListeners.get(payload.courseId);
 	if (!listeners) return;
 	for (const listener of listeners) {
 		listener(payload);
@@ -155,10 +171,7 @@ export function subscribeToAssignmentSubmitted(
 	};
 }
 
-export function subscribeToAssignmentCreated(
-	userId: string,
-	listener: AssignmentCreatedListener
-) {
+export function subscribeToAssignmentCreated(userId: string, listener: AssignmentCreatedListener) {
 	const listeners =
 		localAssignmentCreatedListeners.get(userId) ?? new Set<AssignmentCreatedListener>();
 	listeners.add(listener);
@@ -219,4 +232,27 @@ export function subscribeToUserRoleChanged(userId: string, listener: UserRoleCha
 
 export async function publishUserRoleChanged(payload: UserRoleChangedPayload) {
 	notifyLocalUserRoleChanged(payload);
+}
+
+export function subscribeToStudentCountChanged(
+	courseId: string,
+	listener: StudentCountChangedListener
+) {
+	const listeners =
+		localStudentCountListeners.get(courseId) ?? new Set<StudentCountChangedListener>();
+	listeners.add(listener);
+	localStudentCountListeners.set(courseId, listeners);
+
+	return () => {
+		const courseListeners = localStudentCountListeners.get(courseId);
+		if (!courseListeners) return;
+		courseListeners.delete(listener);
+		if (courseListeners.size === 0) {
+			localStudentCountListeners.delete(courseId);
+		}
+	};
+}
+
+export async function publishStudentCountChanged(payload: StudentCountChangedPayload) {
+	notifyLocalStudentCountChanged(payload);
 }

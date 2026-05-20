@@ -1,7 +1,7 @@
 import { fail, redirect, type Actions, type ServerLoad } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { sessionTable, userTable } from '$lib/server/db/schema'; // adjust import path as needed
-import { getUserByName, getUserByNameOrEmail } from '$lib/server/db/query';
+import { getUserByNameOrEmail } from '$lib/server/db/query';
 import argon2 from 'argon2';
 import { createSession, destroySession, detectSuspiciousActivity } from '$lib/server/auth';
 
@@ -38,8 +38,8 @@ export const actions: Actions = {
 				return fail(400, { error: 'Invalid username or password' });
 			}
 
-			let userAgent = request.headers.get('user-agent') || 'unknown';
-			let clientAddress = getClientAddress();
+			const userAgent = request.headers.get('user-agent') || 'unknown';
+			const clientAddress = getClientAddress();
 
 			// Create session and set cookie
 			const session = await createSession(user.id, clientAddress, userAgent, 14);

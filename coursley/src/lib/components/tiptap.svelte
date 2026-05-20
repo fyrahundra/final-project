@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { EditorContent } from 'svelte-tiptap';
-	import { Editor } from '@tiptap/core';
+	import { Editor, type ChainedCommands } from '@tiptap/core';
+
 	//Tiptap extensions
 	import StarterKit from '@tiptap/starter-kit';
 	import Subscript from '@tiptap/extension-subscript';
@@ -325,7 +325,14 @@
 			}
 		} else {
 			// Regular document save
-			formData.append('id', currentDoc?.id || '');
+			if (!currentDoc?.id) {
+				console.error('Cannot save: document ID is missing');
+				saveState = 'error';
+				setTimeout(() => (saveState = 'idle'), 2000);
+				return;
+			}
+
+			formData.append('id', currentDoc.id);
 			formData.append('content', JSON.stringify(content));
 
 			try {
@@ -333,6 +340,13 @@
 					method: 'POST',
 					body: formData
 				});
+
+				if (!response.ok) {
+					console.error('HTTP error:', response.status);
+					const text = await response.text();
+					throw new Error(`Server error: ${response.status} - ${text}`);
+				}
+
 				const result = await response.json();
 
 				if (result.success || result.type === 'success') {
@@ -347,7 +361,7 @@
 					});
 					setTimeout(() => (saveState = 'idle'), 2000);
 				} else {
-					console.error('Failed to save document');
+					console.error('Failed to save document:', result.error || 'Unknown error');
 					saveState = 'error';
 					setTimeout(() => (saveState = 'idle'), 2000);
 				}
@@ -359,44 +373,58 @@
 		}
 	};
 
-	const turnInDocument = () => {
+	const turnInDocument = async () => {
 		if (isReadOnly) return;
+		if (!currentDoc?.id) {
+			console.error('Cannot turn in: document ID is missing');
+			turnInState = 'error';
+			setTimeout(() => (turnInState = 'idle'), 2000);
+			return;
+		}
+
 		const content = editor?.getJSON();
 		const formData = new FormData();
 
-		formData.append('id', currentDoc?.id || '');
+		formData.append('id', currentDoc.id);
 		formData.append('content', JSON.stringify(content));
 
 		turnInState = 'submitting';
 
-		fetch('/RTE?/turnIn', {
-			method: 'POST',
-			body: formData
-		})
-			.then((response) => response.json())
-			.then((result) => {
-				if (result.success || result.type === 'success') {
-					console.log('Document turned in successfully');
-					hasUnsavedChanges = false;
-					turnInState = 'submitted';
-					setTimeout(() => (turnInState = 'idle'), 2000);
-				} else {
-					console.error('Failed to turn in document');
-					turnInState = 'error';
-					setTimeout(() => (turnInState = 'idle'), 2000);
-				}
-			})
-			.catch((error) => {
-				console.error('Error turning in document:', error);
+		try {
+			const response = await fetch('/RTE?/turnIn', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				console.error('HTTP error:', response.status);
+				const text = await response.text();
+				throw new Error(`Server error: ${response.status} - ${text}`);
+			}
+
+			const result = await response.json();
+
+			if (result.success || result.type === 'success') {
+				console.log('Document turned in successfully');
+				hasUnsavedChanges = false;
+				turnInState = 'submitted';
+				setTimeout(() => (turnInState = 'idle'), 2000);
+			} else {
+				console.error('Failed to turn in document:', result.error || 'Unknown error');
 				turnInState = 'error';
 				setTimeout(() => (turnInState = 'idle'), 2000);
-			});
+			}
+		} catch (error) {
+			console.error('Error turning in document:', error);
+			turnInState = 'error';
+			setTimeout(() => (turnInState = 'idle'), 2000);
+		}
 	};
 
 	function actionTemplate(
-		commandFn: (chain: any) => any,
+		commandFn: (chain: ChainedCommands) => ChainedCommands,
 		activeCheck: string,
-		activeOptions: any = {}
+		activeOptions: Record<string, unknown> = {}
 	) {
 		return {
 			action: () => {
@@ -429,9 +457,11 @@
 							typeof result.data === 'object' &&
 							'assignment' in result.data
 						) {
-							const assignmentResult = (result.data as {
-								assignment: { contentTitle?: string | null; title?: string | null };
-							}).assignment;
+							const assignmentResult = (
+								result.data as {
+									assignment: { contentTitle?: string | null; title?: string | null };
+								}
+							).assignment;
 							title =
 								assignmentResult.contentTitle || assignmentResult.title || 'Untitled Document';
 						} else {
@@ -452,7 +482,7 @@
 				<input type="hidden" name="id" value={currentDoc?.id} />
 			</form>
 		{/if}
-				{#if isReadOnly && data.userAssignment}
+		{#if isReadOnly && data.userAssignment}
 			<p class="readonly-banner">This submission is read-only.</p>
 		{/if}
 		<div class="toolbar">
@@ -466,7 +496,7 @@
 							editor?.chain().focus().setFontFamily(currentFont).run();
 						}}
 					>
-						{#each fontOptions as option}
+						{#each fontOptions as option (option.value)}
 							<option value={option.value}>{option.name}</option>
 						{/each}
 					</select>
@@ -483,14 +513,14 @@
 							}
 						}}
 					>
-						{#each headerOptions as option}
+						{#each headerOptions as option (option.label)}
 							<option value={option.label}>{option.label}</option>
 						{/each}
 					</select>
 				</div>
 				<div class="toolbar-divider"></div>
 				<div class="toolbar-section editor-controls">
-					{#each formatingOptions as option}
+					{#each formatingOptions as option (option.name)}
 						{#key $update}
 							<button
 								type="button"
@@ -524,7 +554,7 @@
 						bind:value={selectedLang}
 						onchange={(e) => changeLanguage((e.target as HTMLSelectElement).value)}
 					>
-						{#each langOptions as option}
+						{#each langOptions as option (option.code)}
 							<option value={option.code}>{option.label}</option>
 						{/each}
 					</select>

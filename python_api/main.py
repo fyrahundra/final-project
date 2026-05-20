@@ -9,17 +9,16 @@ import re
 import subprocess
 import tempfile
 import threading
-import uuid
 from typing import Any, Dict
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "https://coursley-web.onrender.com"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST", "GET", "DELETE", "PUT"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "User-Agent"],
 )
 
 

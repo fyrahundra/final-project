@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { redirect, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { requireAuth } from '$lib/server/auth';
 
 export const load: LayoutServerLoad = async ({ locals, cookies }) => {

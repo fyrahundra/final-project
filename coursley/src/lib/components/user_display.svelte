@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	export let user;
 	export let onProfilePictureUpdated: ((profilePicture: string) => void) | undefined = undefined;
@@ -98,7 +99,7 @@
 				<button
 					type="button"
 					onclick={() => {
-						goto('/dashboard');
+						goto(resolve('/dashboard'));
 					}}
 				>
 					Admin Panel

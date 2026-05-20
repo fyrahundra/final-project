@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+
 	export let data;
 
 	const adminLinks = [
 		{ href: '/dashboard', label: 'Overview' },
 		{ href: '/dashboard/sessions', label: 'Sessions' },
 		{ href: '/dashboard/requests', label: 'Requests' }
-	];
+	] as const;
 </script>
 
 <div class="admin-layout">
@@ -24,8 +26,8 @@
 	<div class="shell">
 		<aside class="sidebar">
 			<nav>
-				{#each adminLinks as link}
-					<a href={link.href}>{link.label}</a>
+				{#each adminLinks as link (link.href)}
+					<a href={resolve(link.href)}>{link.label}</a>
 				{/each}
 			</nav>
 		</aside>

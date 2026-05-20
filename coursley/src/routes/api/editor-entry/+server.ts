@@ -12,12 +12,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ success: false, message: 'User not authenticated' }, { status: 401 });
 	}
 
-	const body = (await request.json().catch(() => null)) as
-		| {
-				target?: EditorTarget;
-				params?: Record<string, string>;
-		  }
-		| null;
+	const body = (await request.json().catch(() => null)) as {
+		target?: EditorTarget;
+		params?: Record<string, string>;
+	} | null;
 
 	const target = body?.target;
 	if (!target || (target !== 'RTE' && target !== 'code_editor')) {

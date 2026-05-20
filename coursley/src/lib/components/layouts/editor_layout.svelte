@@ -1,5 +1,3 @@
-
-
 <main>
 	<slot></slot>
 </main>

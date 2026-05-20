@@ -5,9 +5,11 @@ import {
 	subscribeToProfilePicture,
 	subscribeToTheme,
 	subscribeToAdminRequest,
-	subscribeToUserRoleChanged
+	subscribeToUserRoleChanged,
+	subscribeToStudentCountChanged
 } from '$lib/server/stream';
 import { env } from '$env/dynamic/private';
+import { db } from '$lib/server/db';
 
 function resolveAutosaveIntervalMs() {
 	const raw = env.RTE_AUTOSAVE_INTERVAL_MS;
@@ -34,6 +36,7 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 	let unsubscribeAssignmentCreated: (() => void) | undefined;
 	let unsubscribeAdminRequest: (() => void) | undefined;
 	let unsubscribeUserRoleChanged: (() => void) | undefined;
+	let unsubscribeStudentCount: (() => void)[] = [];
 
 	const stream = new ReadableStream<Uint8Array>({
 		start(controller) {
@@ -90,12 +93,16 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				controller.enqueue(encoder.encode(`event: admin_request_changed\ndata: ${data}\n\n`));
 			};
 
-			const sendUserRoleChanged = (payload: {
-				role: string;
-			}) => {
+			const sendUserRoleChanged = (payload: { role: string }) => {
 				if (isClosed) return;
 				const data = JSON.stringify(payload);
 				controller.enqueue(encoder.encode(`event: user_role_changed\ndata: ${data}\n\n`));
+			};
+
+			const sendStudentCountChanged = (payload: { courseId: string; count: number }) => {
+				if (isClosed) return;
+				const data = JSON.stringify(payload);
+				controller.enqueue(encoder.encode(`event: student_count_changed\ndata: ${data}\n\n`));
 			};
 
 			const sendAutosaveTick = () => {
@@ -143,6 +150,12 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 					unsubscribeUserRoleChanged();
 					unsubscribeUserRoleChanged = undefined;
 				}
+				if (unsubscribeStudentCount.length > 0) {
+					for (const unsub of unsubscribeStudentCount) {
+						unsub();
+					}
+					unsubscribeStudentCount = [];
+				}
 			};
 
 			request.signal.addEventListener('abort', cleanup);
@@ -182,6 +195,42 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 				sendUserRoleChanged({ role });
 			});
 
+			// Subscribe to student count changes for all user's courses
+			(async () => {
+				try {
+					const user = await db.query.userTable.findFirst({
+						where: (user, { eq }) => eq(user.id, userId),
+						with: {
+							enrollments: {
+								columns: { courseId: true }
+							},
+							instructorCourses: {
+								columns: { id: true }
+							}
+						}
+					});
+
+					if (user) {
+						// Get all course IDs the user is enrolled in or instructing
+						const courseIds = new Set<string>();
+						user.enrollments?.forEach((e) => courseIds.add(e.courseId));
+						user.instructorCourses?.forEach((c) => courseIds.add(c.id));
+
+						for (const courseId of courseIds) {
+							const unsubscribe = subscribeToStudentCountChanged(
+								courseId,
+								({ courseId, count }) => {
+									sendStudentCountChanged({ courseId, count });
+								}
+							);
+							unsubscribeStudentCount.push(unsubscribe);
+						}
+					}
+				} catch (error) {
+					console.error('Error subscribing to student count changes:', error);
+				}
+			})();
+
 			pingInterval = setInterval(() => {
 				if (isClosed) return;
 				controller.enqueue(encoder.encode(': ping\n\n'));
@@ -215,6 +264,11 @@ export const GET: RequestHandler = async ({ locals, request }) => {
 			}
 			if (unsubscribeUserRoleChanged) {
 				unsubscribeUserRoleChanged();
+			}
+			if (unsubscribeStudentCount.length > 0) {
+				for (const unsub of unsubscribeStudentCount) {
+					unsub();
+				}
 			}
 		}
 	});

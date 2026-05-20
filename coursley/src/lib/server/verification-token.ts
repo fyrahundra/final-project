@@ -27,11 +27,7 @@ export async function issueVerificationToken(
 	return token;
 }
 
-export async function consumeVerificationToken(
-	token: string,
-	userId: string,
-	type: string
-) {
+export async function consumeVerificationToken(token: string, userId: string, type: string) {
 	const result = await db
 		.select()
 		.from(verificationTokenTable)
@@ -57,11 +53,7 @@ export async function consumeVerificationToken(
 	return record;
 }
 
-export async function validateVerificationToken(
-	token: string,
-	userId: string,
-	type: string
-) {
+export async function validateVerificationToken(token: string, userId: string, type: string) {
 	const result = await db
 		.select()
 		.from(verificationTokenTable)

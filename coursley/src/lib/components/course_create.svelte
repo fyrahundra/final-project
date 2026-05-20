@@ -33,7 +33,9 @@
 			form.reset();
 			await invalidateAll();
 		} catch (error) {
-			message = 'An unexpected error occurred. Please try again.';
+			message =
+				'An unexpected error occurred. Please try again. Error details: ' +
+				(error instanceof Error ? error.message : String(error));
 			messageType = 'error';
 		} finally {
 			loading = false;
