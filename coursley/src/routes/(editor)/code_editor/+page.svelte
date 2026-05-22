@@ -582,6 +582,8 @@
 
 		.editor-wrapper {
 			min-height: 18rem;
+			/* Ensure Monaco has a concrete height on mobile so it renders and is focusable */
+			height: calc(100vh - 220px);
 		}
 
 		.panel-footer {
@@ -694,6 +696,7 @@
 
 		.editor-wrapper {
 			min-height: 16rem;
+			height: calc(100vh - 200px);
 		}
 
 		.editor-container {
