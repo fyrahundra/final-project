@@ -242,25 +242,6 @@
 				</form>
 			</div>
 
-			<div class="panel output-panel">
-				<div class="panel-header">
-					<h3 class="panel-title">Output</h3>
-				</div>
-				<div class="output-body">
-					<div class="plots-container">
-						{#if plots.length > 0}
-							{#each plots as plot (plot)}
-								<img src={resolvePlotSrc(plot)} alt="Plot" class="plot-image" />
-							{/each}
-						{:else}
-							<p class="plots-empty">No plots yet. Run code that generates a plot.</p>
-						{/if}
-					</div>
-					<pre class="output-content">{output}</pre>
-				</div>
-			</div>
-		</div>
-
 			<div class="mobile-actions">
 				{#if isTemplate}
 					<button class="mobile-action-button mobile-save-button" on:click={saveTemplate}>
@@ -290,6 +271,25 @@
 					{running ? 'Running...' : '▶ Run Code'}
 				</button>
 			</div>
+
+			<div class="panel output-panel">
+				<div class="panel-header">
+					<h3 class="panel-title">Output</h3>
+				</div>
+				<div class="output-body">
+					<div class="plots-container">
+						{#if plots.length > 0}
+							{#each plots as plot (plot)}
+								<img src={resolvePlotSrc(plot)} alt="Plot" class="plot-image" />
+							{/each}
+						{:else}
+							<p class="plots-empty">No plots yet. Run code that generates a plot.</p>
+						{/if}
+					</div>
+					<pre class="output-content">{output}</pre>
+				</div>
+			</div>
+		</div>
 	</div>
 </main>
 
@@ -576,10 +576,6 @@
 			gap: 1rem;
 		}
 
-		.output-panel {
-			order: -1;
-		}
-
 		.editor-wrapper {
 			min-height: 18rem;
 			/* Ensure Monaco has a concrete height on mobile so it renders and is focusable */
@@ -618,7 +614,6 @@
 		.mobile-actions {
 			position: static;
 			width: 100%;
-			order: -1;
 			display: flex;
 			flex-wrap: wrap;
 			gap: 0.5rem;
