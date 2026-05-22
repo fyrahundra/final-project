@@ -210,7 +210,13 @@
 					{:else if !hideActions && !isViewOnly}
 						{#if !turnedIn}
 							<button class="save-button" on:click={saveCode}>Save</button>
-							<form id="turnin-form" method="POST" action="?/turnIn" class="turnin-form" use:enhance={handleTurnIn}>
+							<form
+								id="turnin-form"
+								method="POST"
+								action="?/turnIn"
+								class="turnin-form"
+								use:enhance={handleTurnIn}
+							>
 								<input type="hidden" name="id" value={documentId} />
 								<button class="save-button turnin-button" type="submit">Turn In</button>
 							</form>
@@ -255,29 +261,35 @@
 			</div>
 		</div>
 
-		{#if !hideActions}
 			<div class="mobile-actions">
-			{#if isTemplate}
-				<button class="mobile-action-button mobile-save-button" on:click={saveTemplate}>
-					Save Template
-				</button>
-			{:else if !isViewOnly}
-				{#if !turnedIn}
-					<button class="mobile-action-button mobile-save-button" on:click={saveCode}>
-						Save
+				{#if isTemplate}
+					<button class="mobile-action-button mobile-save-button" on:click={saveTemplate}>
+						Save Template
 					</button>
-					<button class="mobile-action-button mobile-turnin-button" type="submit" form="turnin-form">
-						Turn In
-					</button>
-				{:else}
-					<div class="mobile-status">Submission turned in.</div>
+				{:else if !hideActions && !isViewOnly}
+					{#if !turnedIn}
+						<button class="mobile-action-button mobile-save-button" on:click={saveCode}>
+							Save
+						</button>
+						<button
+							class="mobile-action-button mobile-turnin-button"
+							type="submit"
+							form="turnin-form"
+						>
+							Turn In
+						</button>
+					{:else}
+						<div class="mobile-status">Submission turned in.</div>
+					{/if}
 				{/if}
-			{/if}
-			<button class="mobile-action-button mobile-run-button" on:click={runCode} disabled={running}>
-				{running ? 'Running...' : '▶ Run Code'}
-			</button>
+				<button
+					class="mobile-action-button mobile-run-button"
+					on:click={runCode}
+					disabled={running}
+				>
+					{running ? 'Running...' : '▶ Run Code'}
+				</button>
 			</div>
-		{/if}
 	</div>
 </main>
 

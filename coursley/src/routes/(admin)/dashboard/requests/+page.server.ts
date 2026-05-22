@@ -97,8 +97,7 @@ export const actions: Actions = {
 					role: 'student', // Assuming the user remains a student after rejection
 					pendingInstructor: false
 				});
-			}
-			catch (error) {
+			} catch (error) {
 				console.error('Error updating user role:', error);
 				return {
 					error:

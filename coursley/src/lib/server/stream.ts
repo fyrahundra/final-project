@@ -49,8 +49,6 @@ type AssignmentSubmittedListener = (payload: AssignmentSubmittedPayload) => void
 type AssignmentCreatedListener = (payload: AssignmentCreatedPayload) => void;
 type AdminRequestChangedListener = (payload: AdminRequestChangedPayload) => void;
 
-
-
 type UserRoleChangedListener = (payload: UserRoleChangedPayload) => void;
 
 type StudentCountChangedPayload = {

@@ -544,65 +544,65 @@
 				</div>
 			{/if}
 			{#if !hideActions}
-			<div class="toolbar-section save-section">
-				<p>Last saved: {lastSavedTime}</p>
-				{#key $update}
-					<div class="count-display">
-						{getCharacterCount()} / {characterLimit} chars • {getWordCount()} words
-					</div>
-				{/key}
-				{#if !isReadOnly}
-					<button
-						class="save-btn"
-						class:saving={saveState === 'saving'}
-						class:saved={saveState === 'saved'}
-						class:error={saveState === 'error'}
-						disabled={saveState === 'saving'}
-						onmousedown={(e) => {
-							e.preventDefault();
-							if (saveState !== 'saving') {
-								saveDocument();
-							}
-						}}
-					>
-						{#if saveState === 'saving'}
-							⏳ Saving...
-						{:else if saveState === 'saved'}
-							✅ Saved!
-						{:else if saveState === 'error'}
-							❌ Error
-						{:else}
-							💾 Save
-						{/if}
-					</button>
-					{#if data.userAssignment && !isInstructorReadOnly}
+				<div class="toolbar-section save-section">
+					<p>Last saved: {lastSavedTime}</p>
+					{#key $update}
+						<div class="count-display">
+							{getCharacterCount()} / {characterLimit} chars • {getWordCount()} words
+						</div>
+					{/key}
+					{#if !isReadOnly}
 						<button
-							class="turn-in-btn"
-							class:submitting={turnInState === 'submitting'}
-							class:submitted={turnInState === 'submitted'}
-							class:error={turnInState === 'error'}
-							disabled={turnInState === 'submitting'}
+							class="save-btn"
+							class:saving={saveState === 'saving'}
+							class:saved={saveState === 'saved'}
+							class:error={saveState === 'error'}
+							disabled={saveState === 'saving'}
 							onmousedown={(e) => {
 								e.preventDefault();
-								if (turnInState !== 'submitting') {
+								if (saveState !== 'saving') {
 									saveDocument();
-									turnInDocument();
 								}
 							}}
 						>
-							{#if turnInState === 'submitting'}
-								⏳ Submitting...
-							{:else if turnInState === 'submitted'}
-								✅ Submitted!
-							{:else if turnInState === 'error'}
+							{#if saveState === 'saving'}
+								⏳ Saving...
+							{:else if saveState === 'saved'}
+								✅ Saved!
+							{:else if saveState === 'error'}
 								❌ Error
 							{:else}
-								📤 Turn In
+								💾 Save
 							{/if}
 						</button>
+						{#if data.userAssignment && !isInstructorReadOnly}
+							<button
+								class="turn-in-btn"
+								class:submitting={turnInState === 'submitting'}
+								class:submitted={turnInState === 'submitted'}
+								class:error={turnInState === 'error'}
+								disabled={turnInState === 'submitting'}
+								onmousedown={(e) => {
+									e.preventDefault();
+									if (turnInState !== 'submitting') {
+										saveDocument();
+										turnInDocument();
+									}
+								}}
+							>
+								{#if turnInState === 'submitting'}
+									⏳ Submitting...
+								{:else if turnInState === 'submitted'}
+									✅ Submitted!
+								{:else if turnInState === 'error'}
+									❌ Error
+								{:else}
+									📤 Turn In
+								{/if}
+							</button>
+						{/if}
 					{/if}
-				{/if}
-			</div>
+				</div>
 			{/if}
 		</div>
 	</div>

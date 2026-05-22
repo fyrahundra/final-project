@@ -4,7 +4,7 @@ import { db } from '$lib/server/db/index';
 import { userTable, sessionTable } from '$lib/server/db/schema';
 import { createSession, detectSuspiciousActivity, validatePassword } from '$lib/server/auth';
 import { randomUUID } from 'crypto';
-import { eq, or } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 export const load: ServerLoad = async ({ locals }) => {
 	// Your load function logic here
@@ -44,13 +44,26 @@ export const actions: Actions = {
 		const userId = randomUUID();
 
 		try {
+			// Check for case-insensitive username/email collisions
 			const existingUsers = await db
 				.select()
 				.from(userTable)
-				.where(or(eq(userTable.name, name), eq(userTable.email, email)))
+				.where(
+					sql`(lower(${userTable.name}) = lower(${name}) OR lower(${userTable.email}) = lower(${email}))`
+				)
 				.execute();
+
 			if (existingUsers.length > 0) {
-				return fail(400, { error: 'Name, email or password already in use' });
+				// Determine which field conflicts to give a clearer error
+				const nameTaken = existingUsers.some(
+					(u: any) => u.name && u.name.toLowerCase() === name.toLowerCase()
+				);
+				const emailTaken = existingUsers.some(
+					(u: any) => u.email && u.email.toLowerCase() === email.toLowerCase()
+				);
+				if (nameTaken) return fail(400, { error: 'Username already in use' });
+				if (emailTaken) return fail(400, { error: 'Email already in use' });
+				return fail(400, { error: 'Name or email already in use' });
 			}
 			await db.insert(userTable).values({
 				id: userId,

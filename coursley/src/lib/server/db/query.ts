@@ -1,7 +1,7 @@
 import * as schema from './schema';
 import { env } from '$env/dynamic/private';
 import { db } from './index';
-import { eq, or, count, and, ne } from 'drizzle-orm';
+import { eq, count, and, ne, sql } from 'drizzle-orm';
 
 if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
 
@@ -27,7 +27,9 @@ export function getUserByNameOrEmail(input: string) {
 	return db
 		.select()
 		.from(schema.userTable)
-		.where(or(eq(schema.userTable.name, input), eq(schema.userTable.email, input)))
+		.where(
+			sql`(lower(${schema.userTable.name}) = lower(${input}) OR lower(${schema.userTable.email}) = lower(${input}))`
+		)
 		.execute();
 }
 

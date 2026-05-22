@@ -44,8 +44,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			userAssignment: null,
 			isTemplate: false,
 			isViewingSubmission: false,
-			isInstructorReadOnly: false
-			,
+			isInstructorReadOnly: false,
 			hideActions: false
 		};
 	}
