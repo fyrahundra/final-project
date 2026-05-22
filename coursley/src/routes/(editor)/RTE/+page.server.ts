@@ -36,6 +36,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 	const id = url.searchParams.get('id')?.trim() || null;
 	const mode = url.searchParams.get('mode');
 	const templateId = url.searchParams.get('templateId');
+	const hideActions = url.searchParams.get('hideActions') === '1';
 
 	if (!locals.user) {
 		return {
@@ -44,6 +45,8 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			isTemplate: false,
 			isViewingSubmission: false,
 			isInstructorReadOnly: false
+			,
+			hideActions: false
 		};
 	}
 
@@ -54,7 +57,8 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			userAssignment: null,
 			isTemplate: true,
 			templateId: templateId,
-			isInstructorReadOnly: false
+			isInstructorReadOnly: false,
+			hideActions: false
 		};
 	}
 
@@ -64,7 +68,8 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			userAssignment: null,
 			isTemplate: false,
 			isViewingSubmission: false,
-			isInstructorReadOnly: false
+			isInstructorReadOnly: false,
+			hideActions: false
 		};
 	}
 
@@ -81,7 +86,8 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			userAssignment: userAssignment[0],
 			isTemplate: false,
 			isViewingSubmission: false,
-			isInstructorReadOnly: await isCourseInstructorForDocument(id, locals.user?.id)
+			isInstructorReadOnly: await isCourseInstructorForDocument(id, locals.user?.id),
+			hideActions
 		};
 	}
 
@@ -97,7 +103,8 @@ export const load: ServerLoad = async ({ url, locals }) => {
 		userAssignment: null,
 		isTemplate: false,
 		isViewingSubmission: false,
-		isInstructorReadOnly: false
+		isInstructorReadOnly: false,
+		hideActions
 	};
 };
 

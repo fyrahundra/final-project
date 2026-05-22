@@ -16,6 +16,7 @@
 
 	const isTemplate = Boolean(data?.isTemplate);
 	const isViewOnly = Boolean(data?.isViewOnly);
+	const hideActions = Boolean(data?.hideActions);
 	const templateId = String(data?.templateId ?? '');
 	const documentId = String(data?.documentId ?? '');
 	const defaultCode = "print('Hello, World!')\n";
@@ -206,10 +207,10 @@
 				<div class="panel-footer">
 					{#if isTemplate}
 						<button class="save-button" on:click={saveTemplate}>Save Template</button>
-					{:else if !isViewOnly}
+					{:else if !hideActions && !isViewOnly}
 						{#if !turnedIn}
 							<button class="save-button" on:click={saveCode}>Save</button>
-							<form method="POST" action="?/turnIn" class="turnin-form" use:enhance={handleTurnIn}>
+							<form id="turnin-form" method="POST" action="?/turnIn" class="turnin-form" use:enhance={handleTurnIn}>
 								<input type="hidden" name="id" value={documentId} />
 								<button class="save-button turnin-button" type="submit">Turn In</button>
 							</form>
@@ -253,25 +254,53 @@
 				</div>
 			</div>
 		</div>
+
+		{#if !hideActions}
+			<div class="mobile-actions">
+			{#if isTemplate}
+				<button class="mobile-action-button mobile-save-button" on:click={saveTemplate}>
+					Save Template
+				</button>
+			{:else if !isViewOnly}
+				{#if !turnedIn}
+					<button class="mobile-action-button mobile-save-button" on:click={saveCode}>
+						Save
+					</button>
+					<button class="mobile-action-button mobile-turnin-button" type="submit" form="turnin-form">
+						Turn In
+					</button>
+				{:else}
+					<div class="mobile-status">Submission turned in.</div>
+				{/if}
+			{/if}
+			<button class="mobile-action-button mobile-run-button" on:click={runCode} disabled={running}>
+				{running ? 'Running...' : '▶ Run Code'}
+			</button>
+			</div>
+		{/if}
 	</div>
 </main>
 
 <style>
 	main {
-		width: 100vw;
-		height: 100vh;
+		width: 100%;
+		min-height: 100dvh;
+		height: auto;
 		padding: 0;
 		margin: 0;
-		overflow: hidden;
+		overflow: auto;
 		box-sizing: border-box;
 	}
 
 	.page-container {
-		width: 100vw;
-		height: 100vh;
+		width: min(100%, 1600px);
+		min-height: 100dvh;
+		height: auto;
 		display: flex;
 		flex-direction: column;
-		padding: 1.5rem;
+		gap: 1rem;
+		padding: clamp(0.75rem, 2.5vw, 1.5rem);
+		margin: 0 auto;
 		box-sizing: border-box;
 	}
 	.page-title {
@@ -296,7 +325,8 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 1.5rem;
 		width: 100%;
-		height: calc(100% - 3.5rem);
+		height: auto;
+		min-height: 0;
 		flex: 1;
 	}
 
@@ -307,7 +337,7 @@
 		border-radius: 0.5rem;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		width: 100%;
-		height: 100%;
+		height: auto;
 		min-width: 0;
 		min-height: 0;
 	}
@@ -334,14 +364,15 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		height: 100%;
+		height: auto;
 		min-width: 0;
 		min-height: 0;
 	}
 
 	.editor-wrapper {
 		flex: 1;
-		overflow: auto;
+		min-height: 34rem;
+		overflow: hidden;
 		border-bottom: 1px solid #e0e0e0;
 		width: 100%;
 		min-height: 0;
@@ -353,6 +384,7 @@
 		background: var(--secondary-background-color, #f5f5f5);
 		border-top: 1px solid #e0e0e0;
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.5rem;
 		flex-shrink: 0;
 		align-items: center; /* ensure buttons align vertically */
@@ -448,7 +480,7 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		height: 100%;
+		height: auto;
 		min-width: 0;
 		min-height: 0;
 	}
@@ -461,7 +493,7 @@
 		min-height: 0;
 		min-width: 0;
 		padding: 1rem;
-		overflow: hidden;
+		overflow: auto;
 		box-sizing: border-box;
 	}
 
@@ -513,5 +545,167 @@
 		height: auto;
 		border-radius: 0.25rem;
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+	}
+
+	@media (max-width: 960px) {
+		.page-container {
+			padding: 0.75rem;
+			padding-bottom: 5.5rem;
+		}
+
+		.page-title {
+			font-size: 1.4rem;
+			margin-bottom: 1rem;
+		}
+
+		.editor-container {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+		}
+
+		.output-panel {
+			order: -1;
+		}
+
+		.editor-wrapper {
+			min-height: 18rem;
+		}
+
+		.panel-footer {
+			justify-content: stretch;
+			display: none;
+		}
+
+		.save-button,
+		.run-button,
+		.turnin-form {
+			width: 100%;
+		}
+
+		.turnin-form {
+			margin-left: 0;
+		}
+
+		.turnin-button {
+			width: 100%;
+		}
+
+		.output-body {
+			padding: 0.75rem;
+			max-height: 28vh;
+		}
+
+		.output-content {
+			max-height: 32vh;
+			font-size: 0.82rem;
+		}
+
+		.mobile-actions {
+			position: static;
+			width: 100%;
+			order: -1;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			padding: 0;
+			margin: 0 0 0.5rem 0;
+			border-radius: 0;
+			background: rgba(248, 250, 252, 0.96);
+			backdrop-filter: blur(12px);
+			box-shadow: none;
+		}
+
+		.mobile-action-button {
+			width: 100%;
+			height: 48px;
+			border: none;
+			border-radius: 0.8rem;
+			background: #e5e7eb;
+			color: #1f2937;
+			font-size: 0.95rem;
+			font-weight: 600;
+		}
+
+		.mobile-save-button {
+			background: #15803d;
+			color: #ffffff;
+		}
+
+		.mobile-turnin-button {
+			background: #f59e0b;
+			color: #ffffff;
+		}
+
+		.mobile-run-button {
+			background: var(--primary-color, #4a90e2);
+			color: #ffffff;
+			box-shadow: 0 8px 20px rgba(74, 144, 226, 0.24);
+		}
+
+		.mobile-action-button:disabled,
+		.mobile-run-button:disabled {
+			opacity: 0.7;
+		}
+
+		.mobile-status {
+			width: 100%;
+			padding: 0.65rem 0.9rem;
+			border-radius: 0.8rem;
+			background: #e5e7eb;
+			color: #374151;
+			font-size: 0.9rem;
+			font-weight: 600;
+			text-align: center;
+		}
+
+		.plots-container {
+			padding: 0.75rem;
+		}
+
+		.view-only-badge,
+		.save-status {
+			white-space: normal;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.page-container {
+			padding: 0.5rem;
+			padding-bottom: 0.5rem;
+		}
+
+		.panel-header,
+		.panel-footer {
+			padding: 0.75rem;
+		}
+
+		.editor-wrapper {
+			min-height: 16rem;
+		}
+
+		.editor-container {
+			gap: 0.75rem;
+		}
+
+		.output-body {
+			max-height: 24vh;
+		}
+
+		.output-content {
+			max-height: 28vh;
+		}
+
+		.mobile-action-button,
+		.mobile-run-button {
+			height: 46px;
+			font-size: 0.95rem;
+		}
+	}
+
+	@media (min-width: 961px) {
+		.mobile-actions {
+			display: none;
+		}
 	}
 </style>

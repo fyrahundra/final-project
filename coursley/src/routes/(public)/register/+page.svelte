@@ -93,27 +93,37 @@
 
 <style>
 	main {
+		--primary-color: #4a90e2;
+		--secondary-background-color: #e5e7eb;
+		--background-color: #ffffff;
+		--text-color: #1f2937;
+		--accent-color: #e94e77;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 100vw;
+		width: 100%;
+		min-height: 100vh;
 		flex: 1;
-		padding: 2rem;
+		padding: clamp(1rem, 4vw, 2.5rem);
+		box-sizing: border-box;
+		background:
+			radial-gradient(circle at top, rgba(74, 144, 226, 0.16), transparent 35%),
+			linear-gradient(180deg, rgba(245, 247, 250, 0.95), rgba(238, 243, 249, 0.9));
 	}
 
 	.container {
 		width: 100%;
+		max-width: 1040px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.card {
-		width: 100%;
-		max-width: 430px;
+		width: min(100%, 430px);
 		background: rgba(255, 255, 255, 0.92);
 		backdrop-filter: blur(12px);
-		border-radius: 1.35rem;
+		border-radius: 1.25rem;
 		padding: 2rem;
 		box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
 		border: 1px solid rgba(255, 255, 255, 0.45);
@@ -194,6 +204,7 @@
 			opacity 0.16s ease,
 			box-shadow 0.16s ease;
 		font-family: inherit;
+		width: 100%;
 	}
 
 	.btn-primary:hover {
@@ -267,6 +278,25 @@
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
+		}
+	}
+
+	@media (max-width: 640px) {
+		main {
+			padding: 0.75rem;
+		}
+
+		.card {
+			padding: 1.25rem;
+			border-radius: 1rem;
+		}
+
+		h1 {
+			font-size: 1.5rem;
+		}
+
+		.subtitle {
+			font-size: 0.9rem;
 		}
 	}
 </style>

@@ -17,8 +17,6 @@ services:
         fromDatabase:
           name: coursley-db
           property: connectionString
-      - key: REDIS_URL
-        sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY

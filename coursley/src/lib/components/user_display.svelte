@@ -214,4 +214,53 @@
 		gap: 0.75rem;
 		text-align: center;
 	}
+
+	@media (max-width: 640px) {
+		.user-display {
+			position: static;
+			right: auto;
+		}
+
+		.dropdown-menu {
+			position: fixed;
+			left: 0.5rem;
+			right: 0.5rem;
+			top: auto;
+			bottom: 0.5rem;
+			min-width: 0;
+			width: auto;
+			min-height: 0;
+			max-height: calc(100dvh - 1rem);
+			padding: 1rem 0.75rem 1.25rem;
+			border-radius: 1rem 1rem 0.75rem 0.75rem;
+			justify-content: flex-start;
+			align-items: stretch;
+			text-align: left;
+			overflow: auto;
+		}
+
+		.dropdown-menu > p,
+		.dropdown-menu h2 {
+			word-break: break-word;
+		}
+
+		.dropdown-menu > div {
+			align-self: center;
+		}
+
+		.dropdown-menu button,
+		.dropdown-menu form {
+			width: 100%;
+		}
+
+		.dropdown-menu .change-picture {
+			width: 28px;
+			height: 28px;
+		}
+
+		.dropdown-menu .profile-picture {
+			width: 96px !important;
+			height: 96px !important;
+		}
+	}
 </style>

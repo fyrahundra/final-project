@@ -135,48 +135,62 @@
 
 <style>
 	.auth-layout {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
+		display: grid;
+		grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
+		grid-template-rows: auto 1fr;
+		gap: 1rem;
+		width: min(100%, 1440px);
 		min-height: 100vh;
-		min-width: 100vw;
-		padding: 2rem;
+		padding: 1rem;
+		margin: 0 auto;
+		box-sizing: border-box;
 		background-color: var(--secondary-background-color);
+		align-items: start;
 	}
 
 	main {
-		position: absolute;
-		top: 9%;
-		left: 18%;
-		width: 80%;
-		height: 90%;
-		padding: 1rem;
+		grid-column: 2;
+		grid-row: 2;
+		position: relative;
+		width: 100%;
+		min-width: 0;
+		height: auto;
+		padding: 0;
 	}
 
 	.topbar {
 		display: flex;
 		flex-direction: row;
-		position: absolute;
-		width: 100%;
-		height: 5%;
+		grid-column: 1 / -1;
+		position: sticky;
 		top: 0;
-		padding: 1rem;
+		z-index: 20;
+		width: 100%;
+		min-height: 4.5rem;
+		padding: 0.95rem 1.1rem;
 		background-color: #333333;
 		color: #ffffff;
 		text-align: center;
 		justify-content: space-between;
 		align-items: center;
+		border-radius: 1rem;
+		box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
 	}
 
 	.sidebar {
-		position: absolute;
-		left: 0;
-		top: 9%;
-		width: 15%;
-		height: 100vh;
+		grid-column: 1;
+		grid-row: 2;
+		position: sticky;
+		top: 5.5rem;
+		width: 100%;
+		height: calc(100vh - 6.75rem);
 		background-color: var(--background-color);
 		padding: 1rem;
+		border-radius: 1rem;
+		overflow: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 
 	.sidebar ul {
@@ -202,9 +216,12 @@
 	}
 
 	.title {
-		font-size: 1.5rem;
+		font-size: clamp(1.2rem, 2vw, 1.5rem);
 		position: relative;
-		left: 1.5%;
+		left: 0;
+		margin: 0;
+		flex-wrap: wrap;
+		justify-content: flex-start !important;
 	}
 
 	.add-course {
@@ -220,10 +237,9 @@
 		color: var(--text-color);
 		border: none;
 		cursor: pointer;
-
-		position: absolute;
-		bottom: 15%;
-		left: 42.5%;
+		position: static;
+		margin-top: auto;
+		align-self: flex-start;
 	}
 
 	.course-create-backdrop {
@@ -234,13 +250,62 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: 1rem;
+		overflow: auto;
 	}
 
 	.course-create-modal {
-		width: min(92vw, 640px);
+		width: min(100%, 640px);
 		background: #ffffff;
-		border-radius: 10px;
+		border-radius: 12px;
 		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
 		padding: 1rem;
+		max-height: 90vh;
+		overflow: auto;
+	}
+
+	@media (max-width: 900px) {
+		.auth-layout {
+			grid-template-columns: 1fr;
+			padding: 0.75rem;
+		}
+
+		.topbar {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.75rem;
+			position: sticky;
+			top: 0.75rem;
+		}
+
+		.sidebar {
+			grid-column: 1;
+			grid-row: auto;
+			position: static;
+			height: auto;
+		}
+
+		main {
+			grid-column: 1;
+			grid-row: auto;
+		}
+
+		.sidebar a {
+			white-space: normal;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.auth-layout {
+			padding: 0.5rem;
+		}
+
+		.topbar {
+			padding: 0.85rem 0.95rem;
+		}
+
+		.title {
+			font-size: 1rem;
+		}
 	}
 </style>

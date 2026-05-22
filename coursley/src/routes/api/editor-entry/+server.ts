@@ -23,7 +23,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const params = body?.params ?? {};
-	const allowedKeys = new Set(['id', 'view', 'mode', 'templateId']);
+	const allowedKeys = new Set(['id', 'view', 'mode', 'templateId', 'hideActions']);
 	const search = new URLSearchParams();
 
 	for (const [key, value] of Object.entries(params)) {

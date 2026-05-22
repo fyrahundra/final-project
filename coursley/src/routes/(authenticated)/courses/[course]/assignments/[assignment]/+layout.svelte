@@ -73,7 +73,10 @@
 	<section class="assignment-card">
 		<h1>{assignment?.title}</h1>
 		<p>{assignment?.description}</p>
-		<button class="open-btn" onclick={() => openEditor({ id: String(assignment?.id) })}>
+		<button
+			class="open-btn"
+			onclick={() => openEditor({ id: String(assignment?.id), hideActions: '1' })}
+		>
 			Open Assignment
 		</button>
 	</section>

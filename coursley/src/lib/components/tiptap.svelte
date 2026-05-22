@@ -26,6 +26,7 @@
 	const isTemplate = data.isTemplate || false;
 	const isViewingSubmission = data.isViewingSubmission || false;
 	const isInstructorReadOnly = data.isInstructorReadOnly || false;
+	const hideActions = data.hideActions || false;
 	let isSubmitted = currentDoc?.status === 'submitted';
 	let isReadOnly = isInstructorReadOnly || isViewingSubmission || isSubmitted;
 	const templateId = data.templateId || '';
@@ -48,7 +49,6 @@
 				minute: '2-digit'
 			})
 		: 'Never';
-	let autoSaveLabel = '30s';
 	const characterLimit = 10000;
 
 	const update = writable(0);
@@ -201,23 +201,6 @@
 
 	onMount(() => {
 		submissionSource = new EventSource('/streams');
-
-		submissionSource.addEventListener('autosave_tick', (event) => {
-			if (isReadOnly || isTemplate || !currentDoc?.id) return;
-			if (!hasUnsavedChanges || saveState === 'saving') return;
-
-			const message = event as MessageEvent<string>;
-			try {
-				const payload = JSON.parse(message.data) as { intervalMs?: number };
-				if (typeof payload.intervalMs === 'number' && payload.intervalMs > 0) {
-					autoSaveLabel = `${Math.round(payload.intervalMs / 1000)}s`;
-				}
-			} catch (error) {
-				console.error('Invalid autosave tick payload.', error);
-			}
-
-			void saveDocument({ auto: true });
-		});
 
 		submissionSource.addEventListener('assignment_submitted', (event) => {
 			const message = event as MessageEvent<string>;
@@ -560,11 +543,9 @@
 					</select>
 				</div>
 			{/if}
+			{#if !hideActions}
 			<div class="toolbar-section save-section">
 				<p>Last saved: {lastSavedTime}</p>
-				{#if !isReadOnly && !isTemplate}
-					<p>Autosave: every {autoSaveLabel}</p>
-				{/if}
 				{#key $update}
 					<div class="count-display">
 						{getCharacterCount()} / {characterLimit} chars • {getWordCount()} words
@@ -622,6 +603,7 @@
 					{/if}
 				{/if}
 			</div>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -973,24 +955,120 @@
 		.editor-header {
 			border-radius: 12px;
 			padding: 8px 10px;
+			width: 100%;
 		}
 
 		.editor-container {
 			width: 100%;
-			height: calc(100vh - 190px);
-			padding: 2.25rem 1.25rem 2.75rem;
+			max-width: 100%;
+			height: auto;
+			min-height: 70vh;
+			padding: 2rem 1rem 2.25rem;
 			box-shadow: 0 6px 20px rgba(60, 64, 67, 0.14);
+		}
+
+		.header-top {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.75rem;
+		}
+
+		.template-title,
+		.editor-title {
+			width: 100%;
+			max-width: 100%;
+		}
+
+		.editor-title {
+			font-size: 1.15rem;
+		}
+
+		.toolbar {
+			width: 100%;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.65rem;
+		}
+
+		.toolbar-section {
+			width: 100%;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+
+		.toolbar-divider {
+			width: 100%;
+			height: 1px;
+			margin: 0.25rem 0;
+		}
+
+		.editor-controls {
+			flex-wrap: wrap;
+		}
+
+		.editor-controls button {
+			padding: 6px 8px;
+			font-size: 0.8rem;
+		}
+
+		.font-select,
+		.lang-select,
+		.header-select {
+			width: 100%;
+			min-width: 0;
 		}
 
 		.save-section {
 			width: 100%;
 			margin-left: 0;
-			justify-content: flex-end;
+			justify-content: flex-start;
+			flex-wrap: wrap;
 			padding-top: 4px;
 		}
 
-		.editor-title {
-			font-size: 1.2rem;
+		.save-section p,
+		.count-display {
+			white-space: normal;
+		}
+
+		.save-btn,
+		.turn-in-btn {
+			width: 100%;
+		}
+
+		:global(.ProseMirror) {
+			min-height: 560px;
+			font-size: 10.5pt;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.editor-header {
+			padding: 8px;
+			border-radius: 10px;
+		}
+
+		.editor-container {
+			padding: 1.25rem 0.75rem 1.75rem;
+			min-height: 66vh;
+		}
+
+		.editor-title,
+		.template-title h2 {
+			font-size: 1.05rem;
+		}
+
+		.toolbar {
+			gap: 0.5rem;
+		}
+
+		.save-section {
+			gap: 0.4rem;
+		}
+
+		:global(.ProseMirror) {
+			min-height: 520px;
 		}
 	}
 </style>

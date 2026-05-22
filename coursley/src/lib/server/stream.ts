@@ -33,23 +33,23 @@ type AssignmentCreatedPayload = {
 		updatedAt: Date;
 	};
 };
+type AdminRequestChangedPayload = {
+	event: 'created' | 'approved' | 'rejected';
+	requestId: string;
+};
+type UserRoleChangedPayload = {
+	userId: string;
+	role: string;
+	pendingInstructor: boolean;
+};
 
 type ThemeListener = (payload: ThemePayload) => void;
 type ProfilePictureListener = (payload: ProfilePicturePayload) => void;
 type AssignmentSubmittedListener = (payload: AssignmentSubmittedPayload) => void;
 type AssignmentCreatedListener = (payload: AssignmentCreatedPayload) => void;
-
-type AdminRequestChangedPayload = {
-	event: 'created' | 'approved' | 'rejected';
-	requestId: string;
-};
-
 type AdminRequestChangedListener = (payload: AdminRequestChangedPayload) => void;
 
-type UserRoleChangedPayload = {
-	userId: string;
-	role: string;
-};
+
 
 type UserRoleChangedListener = (payload: UserRoleChangedPayload) => void;
 

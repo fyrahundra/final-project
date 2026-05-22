@@ -12,17 +12,20 @@
 	let requestMessage = '';
 	let requestMessageType = '';
 	let currentUserRole = '';
+	let hasPendingInstructorRequest = false;
 
 	onMount(() => {
 		// Initialize with current user role
 		currentUserRole = data.user.role;
+		hasPendingInstructorRequest = Boolean(data.user.pendingInstructor);
 
 		// Listen for user role changes and student count changes via SSE
 		const source = new EventSource('/streams');
 		source.addEventListener('user_role_changed', (event) => {
 			const message = event as MessageEvent<string>;
-			const payload = JSON.parse(message.data) as { role: string };
+			const payload = JSON.parse(message.data) as { role: string; pendingInstructor: boolean };
 			currentUserRole = payload.role;
+			hasPendingInstructorRequest = payload.pendingInstructor;
 		});
 
 		source.addEventListener('student_count_changed', (event) => {
@@ -93,6 +96,7 @@
 			requestLoading = false;
 
 			if (result.type === 'success' && result.data?.success) {
+				hasPendingInstructorRequest = true;
 				requestMessage = result.data.success;
 				requestMessageType = 'success';
 				return;
@@ -138,7 +142,7 @@
 
 		<!-- Become Instructor Section -->
 		<!--TODO: Gör det omöjligt för användare att be om instruktörsroll om de redan gjort det-->
-		{#if currentUserRole === 'student' || data.user.pendingInstructor}
+		{#if currentUserRole === 'student' && !hasPendingInstructorRequest}
 			<div class="bg-white rounded-lg shadow-md p-6">
 				<h2 class="text-xl font-semibold mb-4">Become an Instructor</h2>
 				<p class="text-gray-600 mb-4">
@@ -214,15 +218,28 @@
 		background-color: #f5f5f5;
 	}
 
+	.container {
+		width: min(100%, 1120px);
+		margin: 0 auto;
+		padding: clamp(1rem, 3vw, 2rem);
+		box-sizing: border-box;
+	}
+
+	h1 {
+		font-size: clamp(1.8rem, 4vw, 2.4rem);
+	}
+
 	.actions-row {
 		display: flex;
 		flex-direction: row;
 		gap: 1.5rem;
 		margin-bottom: 2rem;
+		flex-wrap: wrap;
 	}
 
 	.actions-row > div {
 		flex: 1;
+		min-width: min(100%, 320px);
 	}
 
 	.courses-section {
@@ -242,7 +259,7 @@
 		overflow-y: auto;
 		padding-right: 0.25rem;
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 		gap: 0.75rem;
 		scrollbar-width: none;
 		-ms-overflow-style: none;
@@ -288,6 +305,7 @@
 		align-items: center;
 		width: 100%;
 		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 
 	.course-id {
@@ -319,5 +337,24 @@
 		margin-top: 0.35rem;
 		color: var(--card-p);
 		font-size: 0.9rem;
+	}
+
+	@media (max-width: 700px) {
+		.actions-row {
+			flex-direction: column;
+		}
+
+		.courses-scroll {
+			grid-template-columns: 1fr;
+			max-height: none;
+		}
+
+		.course-card {
+			padding: 0.875rem;
+		}
+
+		.course-meta {
+			align-items: flex-start;
+		}
 	}
 </style>

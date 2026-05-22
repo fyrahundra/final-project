@@ -8,6 +8,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 	const mode = url.searchParams.get('mode');
 	const templateId = url.searchParams.get('templateId');
 	const view = url.searchParams.get('view');
+	const hideActions = url.searchParams.get('hideActions') === '1';
 	const id = url.searchParams.get('id')?.trim() || null;
 	const draftKey = url.searchParams.get('id')?.trim() || templateId || 'code_editor_draft';
 
@@ -17,6 +18,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			isTemplate: false,
 			templateId: null,
 			isViewOnly: false,
+			hideActions: false,
 			draftKey: null,
 			content: null,
 			documentId: null
@@ -29,6 +31,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			isTemplate: true,
 			templateId: templateId ?? null,
 			isViewOnly: false,
+			hideActions: false,
 			draftKey,
 			content: null,
 			documentId: null
@@ -41,6 +44,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			isTemplate: false,
 			templateId: templateId ?? null,
 			isViewOnly: view === 'only',
+			hideActions,
 			draftKey,
 			content: null,
 			documentId: null
@@ -59,6 +63,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 			isTemplate: false,
 			templateId: templateId ?? null,
 			isViewOnly: view === 'only',
+			hideActions,
 			draftKey,
 			content: userAssignment[0].content,
 			documentId: id
@@ -76,6 +81,7 @@ export const load: ServerLoad = async ({ url, locals }) => {
 		isTemplate: false,
 		templateId: templateId ?? null,
 		isViewOnly: view === 'only',
+		hideActions,
 		draftKey,
 		content: assignment[0]?.content ?? null,
 		documentId: id

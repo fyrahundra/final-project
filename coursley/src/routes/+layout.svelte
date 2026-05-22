@@ -81,8 +81,8 @@
 		color: var(--text-color);
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
+		align-items: stretch;
+		justify-content: flex-start;
 		min-height: 100vh;
 		width: 100%;
 	}
@@ -90,7 +90,21 @@
 	:global(body) {
 		margin: 0;
 		padding: 0;
-		overflow: hidden;
+		min-height: 100vh;
+		overflow-x: hidden;
+		overflow-y: auto;
+		background: var(--secondary-background-color);
+	}
+
+	:global(*) {
+		box-sizing: border-box;
+	}
+
+	:global(img),
+	:global(video),
+	:global(canvas),
+	:global(svg) {
+		max-width: 100%;
 	}
 
 	:global(a) {

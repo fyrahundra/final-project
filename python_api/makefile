@@ -21,14 +21,11 @@ STDERR_LIMIT=8192
 build:
 	docker build -t $(IMAGE_NAME) .
 
-build-runner:
-	docker build -f $(RUNNER_DOCKERFILE) -t $(RUNNER_IMAGE) .
-
 stop:
 	@echo "Stopping container if it exists..."
 	-@powershell -Command "$$containerId = docker ps -a -q -f name=$(CONTAINER_NAME); if ($$containerId) { docker rm -f $(CONTAINER_NAME) } else { Write-Output 'Container not running or already removed.' }"
 
-run: build build-runner stop
+run: build stop
 	@echo "Running container..."
 	docker run -d --name $(CONTAINER_NAME) -p 8000:8000 --cpus=$(CPUS) --memory=$(MEMORY) \
 		--group-add 0 \
@@ -43,8 +40,3 @@ run: build build-runner stop
 		-e STDOUT_LIMIT=$(STDOUT_LIMIT) \
 		-e STDERR_LIMIT=$(STDERR_LIMIT) \
 		$(IMAGE_NAME)
-
-restart: stop run
-
-test-policy:
-	python policy_regression_test.py

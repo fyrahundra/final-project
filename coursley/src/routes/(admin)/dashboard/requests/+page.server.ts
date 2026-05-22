@@ -34,14 +34,15 @@ export const actions: Actions = {
 			try {
 				await db
 					.update(userTable)
-					.set({ role: 'instructor' })
+					.set({ role: 'instructor', pendingInstructor: false })
 					.where(eq(userTable.id, userId))
 					.execute();
 
 				// Publish event for user role update
 				await publishUserRoleChanged({
 					userId,
-					role: 'instructor'
+					role: 'instructor',
+					pendingInstructor: false
 				});
 
 				try {
@@ -83,6 +84,27 @@ export const actions: Actions = {
 				.set({ status: 'rejected', updatedAt: new Date() })
 				.where(eq(adminRequestTable.id, requestId))
 				.execute();
+			try {
+				await db
+					.update(userTable)
+					.set({ pendingInstructor: false })
+					.where(eq(userTable.id, formData.get('userId') as string))
+					.execute();
+
+				// Publish event for user role update
+				await publishUserRoleChanged({
+					userId: formData.get('userId') as string,
+					role: 'student', // Assuming the user remains a student after rejection
+					pendingInstructor: false
+				});
+			}
+			catch (error) {
+				console.error('Error updating user role:', error);
+				return {
+					error:
+						'Error updating user role: ' + (error instanceof Error ? error.message : String(error))
+				};
+			}
 			try {
 				await db.delete(adminRequestTable).where(eq(adminRequestTable.id, requestId)).execute();
 

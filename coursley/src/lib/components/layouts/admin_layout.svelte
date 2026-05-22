@@ -40,6 +40,15 @@
 
 <style>
 	.admin-layout {
+		--primary-color: #4a90e2;
+		--secondary-color: #f5f5f5;
+		--text-color: #1f2937;
+		--accent-color: #e94e77;
+		--background-color: #ffffff;
+		--secondary-background-color: #eef3f9;
+		--card-color: #ffffff;
+		--card-p: #334155;
+		--hover-color: #e2e8f0;
 		width: 100vw;
 		min-height: 100vh;
 		display: flex;
