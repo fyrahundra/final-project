@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { userAssignmentTable } from '$lib/server/db/schema';
+import { userAssignmentTable, assignmentTable } from '$lib/server/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { publishAssignmentSubmitted } from '$lib/server/stream';
@@ -111,4 +111,39 @@ export const actions: Actions = {
 			};
 		}
 	}
+	,
+		removeAssignment: async ({ params, locals }) => {
+			const assignmentId = params.assignment;
+			const userId = locals.user?.id;
+
+			if (!userId) {
+				return { success: false, error: 'Not authenticated' };
+			}
+
+			try {
+				// Verify that the current user is the instructor for this assignment's course
+				const assignmentForCourse = await db.query.assignmentTable.findFirst({
+					where: (assignment, { eq }) => eq(assignment.id, assignmentId),
+					with: { course: true }
+				});
+
+				if (!assignmentForCourse) {
+					return { success: false, error: 'Assignment not found' };
+				}
+
+				if (assignmentForCourse.course?.instructorId !== userId) {
+					return { success: false, error: 'Not authorized' };
+				}
+
+				// Remove any user assignments for this assignment
+				await db.delete(userAssignmentTable).where(eq(userAssignmentTable.assignmentId, assignmentId)).execute();
+
+				// Remove the assignment itself
+				await db.delete(assignmentTable).where(eq(assignmentTable.id, assignmentId)).execute();
+
+				return { success: true };
+			} catch (err) {
+				return { success: false, error: 'Error removing assignment: ' + (err instanceof Error ? err.message : String(err)) };
+			}
+		}
 };

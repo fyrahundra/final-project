@@ -50,9 +50,12 @@
 			<h4>Course ID: {data.course?.joinId}</h4>
 			<h4>Students: {studentCount}</h4>
 		</div>
-		<button class="create-btn" on:click={() => (showCreateAssignment = true)}
+		<button class="create-btn" onclick={() => (showCreateAssignment = true)}
 			>Create Assignment</button
 		>
+		<form method="POST" action="?/removeCourse" onsubmit={(e) => { e.preventDefault(); if (!confirm('Delete this course and all its data? This cannot be undone.')) return; const f = document.createElement('form'); f.method = 'POST'; f.action = '?/removeCourse'; document.body.appendChild(f); f.submit(); }}>
+			<button class="create-btn" style="background:#d9534f;margin-left:8px;">Delete Course</button>
+		</form>
 	{:else}
 		<h4>Students: {studentCount}</h4>
 	{/if}
@@ -77,8 +80,8 @@
 {#if showCreateAssignment}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="assignment-create-backdrop" on:click={() => (showCreateAssignment = false)}>
-		<div class="assignment-create-modal" on:click|stopPropagation>
+	<div class="assignment-create-backdrop" onclick={() => (showCreateAssignment = false)}>
+		<div class="assignment-create-modal" onclick={(e) => e.stopPropagation()}>
 			<AssignmentCreate action="?/createAssignment" />
 		</div>
 	</div>

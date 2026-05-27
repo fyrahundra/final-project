@@ -79,6 +79,9 @@
 		>
 			Open Assignment
 		</button>
+		<form method="POST" action="?/removeAssignment" onsubmit={(e) => { e.preventDefault(); if (!confirm('Delete this assignment and all student submissions? This cannot be undone.')) return; const f = document.createElement('form'); f.method = 'POST'; f.action = '?/removeAssignment'; document.body.appendChild(f); f.submit(); }}>
+			<button class="open-btn" style="background:#d9534f;margin-left:8px;">Delete Assignment</button>
+		</form>
 	</section>
 
 	<h4 class="section-title">Student submissions</h4>
